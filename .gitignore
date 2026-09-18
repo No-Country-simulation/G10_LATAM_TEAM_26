@@ -1,0 +1,17 @@
+# Secretos — NUNCA subir
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Datos capturados (crudos, pueden contener PII sin anonimizar)
+data/raw/
+
+# IDE / SO
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

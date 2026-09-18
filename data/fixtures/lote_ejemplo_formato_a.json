@@ -1,0 +1,308 @@
+{
+  "formato_version": "1.0",
+  "origen_comunidad": "Discord_Grupo_ONE_G10",
+  "periodo_referencia": "Semana_04",
+  "fecha_ingesta": "2026-09-18T20:00:00Z",
+  "interacciones": [
+    {
+      "message_id": "MSG-0001",
+      "source": "discord",
+      "channel": "logros-y-empleos",
+      "timestamp": "2026-09-14T14:22:00Z",
+      "autor": "Valeria Q.",
+      "tipo_declarado": "testimonio",
+      "texto": "¡Comunidad, no lo puedo creer! Quedé seleccionada como Data Analyst Jr en una fintech. En la entrevista técnica me preguntaron por el proyecto de pipeline con LangChain y OCI que armé en el bootcamp y eso marcó la diferencia. ¡Gracias a todos por el apoyo!",
+      "metadata": { "reacciones": 41, "respuestas": 12 }
+    },
+    {
+      "message_id": "MSG-0002",
+      "source": "discord",
+      "channel": "dudas-langgraph",
+      "timestamp": "2026-09-14T15:03:00Z",
+      "autor": "Luis A.",
+      "tipo_declarado": "pregunta_tecnica",
+      "texto": "Tengo dudas sobre cómo estructurar los nodos condicionales en LangGraph cuando la respuesta del LLM necesita reintento. ¿Alguien tiene un ejemplo práctico de un router con retry?",
+      "metadata": { "reacciones": 8, "respuestas": 6 }
+    },
+    {
+      "message_id": "MSG-0003",
+      "source": "discord",
+      "channel": "logros-y-empleos",
+      "timestamp": "2026-09-14T14:35:00Z",
+      "autor": "Pedro M.",
+      "tipo_declarado": "conversacion",
+      "texto": "¡Felicitaciones Valeria! Te lo mereces totalmente 🎉🎉",
+      "metadata": { "reacciones": 5, "respuestas": 0 }
+    },
+    {
+      "message_id": "MSG-0004",
+      "source": "discord",
+      "channel": "dudas-tecnicas",
+      "timestamp": "2026-09-14T16:40:00Z",
+      "autor": "Carla T.",
+      "tipo_declarado": "pregunta_tecnica",
+      "texto": "Estoy intentando subir un archivo a mi bucket de OCI y me devuelve error 403 aunque el bucket existe. Ya revisé la región y el namespace. ¿A alguien más le pasó?",
+      "metadata": { "reacciones": 6, "respuestas": 4 }
+    },
+    {
+      "message_id": "MSG-0005",
+      "source": "form",
+      "channel": "feedback-cursos",
+      "timestamp": "2026-09-14T18:10:00Z",
+      "autor": "Rosa V.",
+      "tipo_declarado": "feedback",
+      "texto": "El módulo de ingeniería de prompts superó mis expectativas. Los ejercicios con few-shot me sirvieron directamente en mi trabajo actual. Ojalá hubiera más contenido así de aplicado.",
+      "metadata": { "reacciones": 0, "respuestas": 0 }
+    },
+    {
+      "message_id": "MSG-0006",
+      "source": "form",
+      "channel": "feedback-cursos",
+      "timestamp": "2026-09-14T19:25:00Z",
+      "autor": "Diego S.",
+      "tipo_declarado": "feedback",
+      "texto": "El video de la clase 8 de OCI está desactualizado, la consola que se muestra ya no es igual y me costó seguir los pasos. Estaría bueno que lo regraben.",
+      "metadata": { "reacciones": 0, "respuestas": 0 }
+    },
+    {
+      "message_id": "MSG-0007",
+      "source": "discord",
+      "channel": "proyectos",
+      "timestamp": "2026-09-15T09:12:00Z",
+      "autor": "Equipo Fenix",
+      "tipo_declarado": "logro",
+      "texto": "¡Nuestro proyecto open source de análisis de sentimiento llegó a 100 estrellas en GitHub! Empezó como ejercicio del bootcamp y ahora tiene contribuidores de 4 países. Gracias a los mentores que nos empujaron a publicarlo.",
+      "metadata": { "reacciones": 33, "respuestas": 9 }
+    },
+    {
+      "message_id": "MSG-0008",
+      "source": "discord",
+      "channel": "dudas-tecnicas",
+      "timestamp": "2026-09-15T10:30:00Z",
+      "autor": "Andrea L.",
+      "tipo_declarado": "pregunta_tecnica",
+      "texto": "¿Cuántos ejemplos conviene poner en un prompt few-shot? Noto que con 2 el modelo no agarra el estilo y con 8 se me va el presupuesto de tokens. ¿Hay una regla práctica?",
+      "metadata": { "reacciones": 11, "respuestas": 7 }
+    },
+    {
+      "message_id": "MSG-0009",
+      "source": "discord",
+      "channel": "logros-y-empleos",
+      "timestamp": "2026-09-15T11:45:00Z",
+      "autor": "Marco R.",
+      "tipo_declarado": "testimonio",
+      "texto": "Cerré mi primer cliente freelance: un e-commerce que necesitaba automatizar reportes con n8n y un LLM. Usé exactamente lo que vimos en el módulo de automatización. De estudiante a facturar en 3 meses.",
+      "metadata": { "reacciones": 27, "respuestas": 8 }
+    },
+    {
+      "message_id": "MSG-0010",
+      "source": "discord",
+      "channel": "general",
+      "timestamp": "2026-09-15T12:20:00Z",
+      "autor": "Fiorella C.",
+      "tipo_declarado": "conversacion",
+      "texto": "¿Hay gente de Lima por acá? Estoy armando un grupo de estudio presencial para los sábados, escríbanme por DM.",
+      "metadata": { "reacciones": 4, "respuestas": 5 }
+    },
+    {
+      "message_id": "MSG-0011",
+      "source": "discord",
+      "channel": "dudas-tecnicas",
+      "timestamp": "2026-09-15T14:05:00Z",
+      "autor": "Jorge P.",
+      "tipo_declarado": "pregunta_tecnica",
+      "texto": "¿Alguien sabe exactamente qué límites tiene la capa Always Free de OCI para Object Storage? No quiero pasarme y que me cobren en medio del proyecto de la hackathon.",
+      "metadata": { "reacciones": 9, "respuestas": 3 }
+    },
+    {
+      "message_id": "MSG-0012",
+      "source": "discord",
+      "channel": "dudas-tecnicas",
+      "timestamp": "2026-09-15T15:33:00Z",
+      "autor": "Karen D.",
+      "tipo_declarado": "pregunta_tecnica",
+      "texto": "Me sale ModuleNotFoundError al correr streamlit run app.py aunque ya instalé todo con pip. ¿Alguna idea?",
+      "metadata": { "reacciones": 2, "respuestas": 4 }
+    },
+    {
+      "message_id": "MSG-0013",
+      "source": "discord",
+      "channel": "logros-y-empleos",
+      "timestamp": "2026-09-15T17:50:00Z",
+      "autor": "Sofia G.",
+      "tipo_declarado": "testimonio",
+      "texto": "Pasé la entrevista técnica de una consultora grande. Las mock interviews que organizamos en la comunidad fueron clave: la pregunta de diseño de sistemas era casi igual a la que practicamos la semana pasada.",
+      "metadata": { "reacciones": 19, "respuestas": 6 }
+    },
+    {
+      "message_id": "MSG-0014",
+      "source": "form",
+      "channel": "feedback-cursos",
+      "timestamp": "2026-09-15T20:15:00Z",
+      "autor": "Nicolas B.",
+      "tipo_declarado": "feedback",
+      "texto": "La mentoría de ingeniería de agentes fue lo mejor del programa hasta ahora. El mentor nos hizo debuggear un grafo real en vivo en lugar de mostrar slides. Más sesiones así por favor.",
+      "metadata": { "reacciones": 0, "respuestas": 0 }
+    },
+    {
+      "message_id": "MSG-0015",
+      "source": "discord",
+      "channel": "general",
+      "timestamp": "2026-09-16T08:45:00Z",
+      "autor": "Pedro M.",
+      "tipo_declarado": "conversacion",
+      "texto": "Yo depurando mi grafo de LangGraph a las 2am: no es un bug, es una feature emergente del sistema multiagente 😂",
+      "metadata": { "reacciones": 22, "respuestas": 3 }
+    },
+    {
+      "message_id": "MSG-0016",
+      "source": "discord",
+      "channel": "dudas-tecnicas",
+      "timestamp": "2026-09-16T09:30:00Z",
+      "autor": "Milagros H.",
+      "tipo_declarado": "pregunta_tecnica",
+      "texto": "¿Cómo genero las API keys para usar el SDK de Python con OCI? La documentación me manda a tres páginas distintas y ya me perdí entre el archivo de config y el pem.",
+      "metadata": { "reacciones": 7, "respuestas": 5 }
+    },
+    {
+      "message_id": "MSG-0017",
+      "source": "discord",
+      "channel": "logros-y-empleos",
+      "timestamp": "2026-09-16T11:00:00Z",
+      "autor": "Renzo F.",
+      "tipo_declarado": "logro",
+      "texto": "¡Aprobé la certificación OCI Foundations al primer intento! Estudié con los apuntes compartidos en el canal de recursos. Si alguien la está preparando, pregúntenme lo que quieran.",
+      "metadata": { "reacciones": 15, "respuestas": 4 }
+    },
+    {
+      "message_id": "MSG-0018",
+      "source": "discord",
+      "channel": "general",
+      "timestamp": "2026-09-16T12:40:00Z",
+      "autor": "Camila O.",
+      "tipo_declarado": "feedback",
+      "texto": "Chicos, dejé una duda en el canal de soporte hace 3 días y nadie respondió. Entiendo que los mentores están ocupados pero un poco frustrante la verdad.",
+      "metadata": { "reacciones": 6, "respuestas": 2 }
+    },
+    {
+      "message_id": "MSG-0019",
+      "source": "discord",
+      "channel": "dudas-tecnicas",
+      "timestamp": "2026-09-16T14:15:00Z",
+      "autor": "Bruno E.",
+      "tipo_declarado": "pregunta_tecnica",
+      "texto": "Para el proyecto de la hackathon, ¿conviene que n8n reciba los mensajes por webhook o hacer polling cada X minutos? ¿Qué pros y contras le ven a cada uno?",
+      "metadata": { "reacciones": 10, "respuestas": 8 }
+    },
+    {
+      "message_id": "MSG-0020",
+      "source": "discord",
+      "channel": "logros-y-empleos",
+      "timestamp": "2026-09-16T16:30:00Z",
+      "autor": "Patricia N.",
+      "tipo_declarado": "testimonio",
+      "texto": "Hoy me confirmaron el ascenso a Analista de Automatización en mi empresa. Hace un año era asistente administrativa y empecé el bootcamp sin saber programar. Presenté tres flujos con IA que ahorran 20 horas semanales al equipo y eso cerró el ascenso. Se puede, de verdad se puede.",
+      "metadata": { "reacciones": 58, "respuestas": 16 }
+    },
+    {
+      "message_id": "MSG-0021",
+      "source": "discord",
+      "channel": "general",
+      "timestamp": "2026-09-16T18:05:00Z",
+      "autor": "Fabian U.",
+      "tipo_declarado": "conversacion",
+      "texto": "¿Qué laptop recomiendan para desarrollo con presupuesto ajustado? La mía ya no da para correr nada local.",
+      "metadata": { "reacciones": 3, "respuestas": 11 }
+    },
+    {
+      "message_id": "MSG-0022",
+      "source": "discord",
+      "channel": "dudas-tecnicas",
+      "timestamp": "2026-09-16T19:50:00Z",
+      "autor": "Gladys R.",
+      "tipo_declarado": "pregunta_tecnica",
+      "texto": "¿Alguien tiene un snippet funcionando para subir un JSON a Object Storage con el SDK de Python de OCI? El put_object me pide un namespace que no sé de dónde sacar.",
+      "metadata": { "reacciones": 8, "respuestas": 6 }
+    },
+    {
+      "message_id": "MSG-0023",
+      "source": "form",
+      "channel": "feedback-cursos",
+      "timestamp": "2026-09-17T09:20:00Z",
+      "autor": "Hugo Z.",
+      "tipo_declarado": "feedback",
+      "texto": "El proyecto final integrador está muy bien planteado: te obliga a conectar todo lo aprendido. Sugerencia: estaría bueno un checklist de autoevaluación antes de entregar.",
+      "metadata": { "reacciones": 0, "respuestas": 0 }
+    },
+    {
+      "message_id": "MSG-0024",
+      "source": "discord",
+      "channel": "dudas-tecnicas",
+      "timestamp": "2026-09-17T10:45:00Z",
+      "autor": "Ivan W.",
+      "tipo_declarado": "pregunta_tecnica",
+      "texto": "¿Alguien me explica en simple la diferencia entre temperature y top_p? Entiendo que ambos controlan la aleatoriedad pero no sé cuándo tocar cuál para que los copys no salgan tan robóticos.",
+      "metadata": { "reacciones": 14, "respuestas": 5 }
+    },
+    {
+      "message_id": "MSG-0025",
+      "source": "discord",
+      "channel": "general",
+      "timestamp": "2026-09-17T08:00:00Z",
+      "autor": "Rosa V.",
+      "tipo_declarado": "conversacion",
+      "texto": "¡Buenos días a todos! Excelente semana para la comunidad ☀️",
+      "metadata": { "reacciones": 7, "respuestas": 1 }
+    },
+    {
+      "message_id": "MSG-0026",
+      "source": "discord",
+      "channel": "proyectos",
+      "timestamp": "2026-09-17T13:30:00Z",
+      "autor": "Equipo Quantum",
+      "tipo_declarado": "logro",
+      "texto": "¡Ganamos la hackathon interna de nuestra universidad con el chatbot de orientación vocacional que empezamos como práctica del módulo de agentes! El jurado destacó la arquitectura RAG. Gracias a los que nos ayudaron a testear.",
+      "metadata": { "reacciones": 29, "respuestas": 7 }
+    },
+    {
+      "message_id": "MSG-0027",
+      "source": "discord",
+      "channel": "dudas-tecnicas",
+      "timestamp": "2026-09-17T15:10:00Z",
+      "autor": "Lucia M.",
+      "tipo_declarado": "pregunta_tecnica",
+      "texto": "Para los que ya consiguieron trabajo: ¿cómo estructuraron su portfolio? ¿Los reclutadores miran más el GitHub, los deploys funcionando o el README? Quiero priorizar bien mi tiempo.",
+      "metadata": { "reacciones": 16, "respuestas": 9 }
+    },
+    {
+      "message_id": "MSG-0028",
+      "source": "discord",
+      "channel": "logros-y-empleos",
+      "timestamp": "2026-09-17T21:40:00Z",
+      "autor": "Ernesto V.",
+      "tipo_declarado": "testimonio",
+      "texto": "A los 42 años, después de 15 en logística, hoy firmé mi primer contrato como desarrollador. Mi familia pensaba que estaba loco cuando empecé el bootcamp. Si estás dudando si es tarde para cambiar de carrera: no lo es. Gracias a esta comunidad que nunca me dejó bajar los brazos.",
+      "metadata": { "reacciones": 84, "respuestas": 23 }
+    },
+    {
+      "message_id": "MSG-0029",
+      "source": "discord",
+      "channel": "dudas-tecnicas",
+      "timestamp": "2026-09-18T09:55:00Z",
+      "autor": "Tania J.",
+      "tipo_declarado": "pregunta_tecnica",
+      "texto": "Sigo con el error 401 NotAuthenticated al usar el SDK de OCI desde Python. Ya configuré el archivo config con el fingerprint y la key. ¿Qué más puede ser? Veo que varios tuvimos problemas parecidos esta semana.",
+      "metadata": { "reacciones": 5, "respuestas": 3 }
+    },
+    {
+      "message_id": "MSG-0030",
+      "source": "discord",
+      "channel": "general",
+      "timestamp": "2026-09-18T11:25:00Z",
+      "autor": "Grupo 10",
+      "tipo_declarado": "feedback",
+      "texto": "Queríamos agradecer públicamente a los mentores por el acompañamiento de este mes. La disponibilidad para resolver dudas fuera de horario hace una diferencia enorme.",
+      "metadata": { "reacciones": 31, "respuestas": 4 }
+    }
+  ]
+}

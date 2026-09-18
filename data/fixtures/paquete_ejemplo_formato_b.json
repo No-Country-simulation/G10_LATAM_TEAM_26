@@ -1,0 +1,94 @@
+{
+  "formato_version": "1.0",
+  "status": "exito",
+  "paquete_id": "PKG-2026-S04-001",
+  "origen_comunidad": "Discord_Grupo_ONE_G10",
+  "periodo_referencia": "Semana_04",
+  "fecha_generacion": "2026-09-18T20:30:00Z",
+  "resumen_comunidad": {
+    "total_interacciones_procesadas": 30,
+    "sentimiento_predominante": "positive",
+    "distribucion_sentimiento": { "positive": 14, "neutral": 10, "negative": 6 },
+    "temas_principales": ["contratacion/logros", "oci/configuracion", "langgraph", "prompts"],
+    "oportunidades_detectadas": 12
+  },
+  "activos": [
+    {
+      "activo_id": "POST-001",
+      "formato": "post_linkedin",
+      "estado_curaduria": "borrador",
+      "lineage": { "opportunity_id": "OPP-028", "message_id": "MSG-0028" },
+      "contenido": {
+        "titulo": "Nunca es tarde: de 15 años en logística a desarrollador a los 42",
+        "copy": "Hoy queremos celebrar una historia que redefine lo que significa 'empezar de nuevo'. 💪\n\nErnesto pasó 15 años trabajando en logística. Hace unos meses, contra la opinión de casi todos, decidió apostar por la tecnología y comenzó su formación desde cero.\n\nHoy firmó su primer contrato como desarrollador.\n\n'Si estás dudando si es tarde para cambiar de carrera: no lo es', escribió a su comunidad, la misma que —en sus palabras— nunca lo dejó bajar los brazos.\n\nHistorias como la de Ernesto nos recuerdan por qué hacemos lo que hacemos. La edad no es el límite; el primer paso sí. 🚀\n\n¿Conocés a alguien que esté dudando en dar ese paso? Etiquetalo. 👇",
+        "hashtags": ["#CambioDeCarrera", "#NuncaEsTarde", "#CarreraTech", "#TalentosTech"],
+        "canal_recomendado": "LinkedIn Oficial",
+        "potencial_engagement": "alto"
+      }
+    },
+    {
+      "activo_id": "POST-002",
+      "formato": "post_linkedin",
+      "estado_curaduria": "aprobado",
+      "lineage": { "opportunity_id": "OPP-020", "message_id": "MSG-0020" },
+      "contenido": {
+        "titulo": "De asistente administrativa a Analista de Automatización: el ascenso de Patricia",
+        "copy": "Hace un año, Patricia era asistente administrativa y no sabía programar.\n\nHoy le confirmaron su ascenso a Analista de Automatización. 🎉\n\n¿La clave? Presentó a su empresa tres flujos de automatización con IA que ahorran 20 horas semanales a su equipo. No fue suerte: fue formación aplicada a problemas reales.\n\n'Se puede, de verdad se puede', le escribió a su comunidad de estudio.\n\nEl mejor portfolio es el impacto medible. 📊",
+        "hashtags": ["#Automatizacion", "#InteligenciaArtificial", "#MujeresEnTech", "#CarreraDev"],
+        "canal_recomendado": "LinkedIn Oficial",
+        "potencial_engagement": "alto"
+      }
+    },
+    {
+      "activo_id": "NEWS-001",
+      "formato": "destaque_newsletter",
+      "estado_curaduria": "borrador",
+      "lineage": { "opportunity_id": "OPP-001", "message_id": "MSG-0001" },
+      "contenido": {
+        "seccion": "Logro de la Semana",
+        "titular": "Estudiante consigue su primer empleo como Data Analyst con su portfolio de IA",
+        "resumen": "Valeria fue seleccionada como Data Analyst Jr en una fintech. En la entrevista técnica, el proyecto de pipeline con LangChain y OCI que construyó durante el bootcamp marcó la diferencia. Otra prueba de que los proyectos prácticos abren puertas."
+      }
+    },
+    {
+      "activo_id": "FAQ-001",
+      "formato": "sugerencia_faq",
+      "estado_curaduria": "publicado",
+      "lineage": { "opportunity_id": "OPP-002", "message_id": "MSG-0002" },
+      "contenido": {
+        "tema": "Tip Rápido: cómo crear nodos de reintento en LangGraph",
+        "cuerpo": "Cuando la respuesta del LLM puede fallar o venir mal formada, la solución en LangGraph es un nodo router: después del nodo que llama al LLM, agregá una función condicional que valide la salida (por ejemplo, que el JSON parsee correctamente). Si la validación falla, el router redirige de vuelta al nodo generador — con un contador en el estado del grafo para limitar los reintentos (2 o 3 máximo) y una rama de fallback si se agotan. Patrón: generador → validador → (ok: continuar | error y quedan intentos: volver al generador | error sin intentos: fallback).",
+        "origen_descripcion": "Duda frecuente planteada en el canal de dudas de LangGraph"
+      }
+    },
+    {
+      "activo_id": "FAQ-002",
+      "formato": "sugerencia_faq",
+      "estado_curaduria": "borrador",
+      "lineage": { "opportunity_id": "OPP-029", "message_id": "MSG-0029" },
+      "contenido": {
+        "tema": "Guía consolidada: configuración y autenticación del SDK de OCI en Python",
+        "cuerpo": "Esta semana se registraron 5 consultas sobre configuración de OCI (errores 401/403, API keys, namespace, put_object). Se sugiere publicar una guía única que cubra: 1) generación de API keys y archivo ~/.oci/config, 2) obtención del namespace del tenancy, 3) snippet mínimo de put_object funcionando, 4) checklist de troubleshooting para 401 (fingerprint, ruta de la key, región) y 403 (políticas del bucket).",
+        "origen_descripcion": "Tendencia detectada: 5 consultas sobre OCI entre el 14 y el 18 de septiembre (MSG-0004, 0011, 0016, 0022, 0029)"
+      }
+    },
+    {
+      "activo_id": "POST-003",
+      "formato": "post_linkedin",
+      "estado_curaduria": "descartado",
+      "lineage": { "opportunity_id": "OPP-013", "message_id": "MSG-0013" },
+      "contenido": {
+        "titulo": "Las mock interviews de la comunidad funcionan",
+        "copy": "Sofia aprobó la entrevista técnica de una consultora grande, y cuenta que las mock interviews organizadas por su propia comunidad de estudio fueron la clave: la pregunta de diseño de sistemas era casi igual a la que había practicado la semana anterior. Practicar en comunidad rinde. 🤝",
+        "hashtags": ["#MockInterview", "#ComunidadTech", "#Empleabilidad"],
+        "canal_recomendado": "LinkedIn Oficial",
+        "potencial_engagement": "medio"
+      }
+    }
+  ],
+  "almacenamiento_oci": {
+    "bucket": "communitylab-bucket",
+    "ruta_objeto": "generated/2026-09-18/PKG-2026-S04-001.json",
+    "status": "guardado_con_exito"
+  }
+}

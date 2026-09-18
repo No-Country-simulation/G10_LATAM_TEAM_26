@@ -190,7 +190,7 @@ streamlit run app.py
 
 | Semana | Hito |
 |---|---|
-| 1 | Fundación: repositorio, dataset, contratos de datos, esqueleto end-to-end con bucket OCI activo |
+| 1 | Fundación: repositorio, dataset, formatos de datos, esqueleto end-to-end con bucket OCI activo |
 | 2 | Inteligencia: prompts estructurados, cadena de agentes, scoring — casos 1 y 2 funcionando |
 | 3 | Producto completo: panel Streamlit integrado con OCI, flujo de curaduría, diferenciales |
 | 4 | Validación: métricas de clasificación, video demo, presentación final |

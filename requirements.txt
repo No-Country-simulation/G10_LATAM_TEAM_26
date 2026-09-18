@@ -1,0 +1,8 @@
+discord.py>=2.4
+python-dotenv>=1.0
+pydantic>=2.7
+streamlit>=1.38
+langgraph>=0.2
+langchain-google-genai>=2.0
+google-generativeai>=0.8
+oci>=2.129
