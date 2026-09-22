@@ -8,20 +8,57 @@
   "resumen_comunidad": {
     "total_interacciones_procesadas": 30,
     "sentimiento_predominante": "positive",
-    "distribucion_sentimiento": { "positive": 14, "neutral": 10, "negative": 6 },
-    "temas_principales": ["contratacion/logros", "oci/configuracion", "langgraph", "prompts"],
-    "oportunidades_detectadas": 12
+    "distribucion_sentimiento": {
+      "positive": 14,
+      "neutral": 10,
+      "negative": 6
+    },
+    "temas_principales": [
+      "contratacion/logros",
+      "oci/configuracion",
+      "langgraph",
+      "prompts"
+    ],
+    "oportunidades_detectadas": 12,
+    "tendencias_detectadas": [
+      {
+        "tema": "oci",
+        "menciones": 5,
+        "descripcion": "5 mensajes sobre 'oci' en el período — conviene publicar una guía o aviso"
+      }
+    ]
   },
   "activos": [
     {
       "activo_id": "POST-001",
       "formato": "post_linkedin",
       "estado_curaduria": "borrador",
-      "lineage": { "opportunity_id": "OPP-028", "message_id": "MSG-0028" },
+      "origen": {
+        "message_id": "MSG-0028",
+        "opportunity_id": "OPP-028",
+        "channel": "logros-y-empleos",
+        "autor": "Ernesto V.",
+        "message": "A los 42 años, después de 15 en logística, hoy firmé mi primer contrato como desarrollador. Mi familia pensaba que estaba loco cuando empecé el bootcamp. Si estás dudando si es tarde para cambiar de carrera: no lo es. Gracias a esta comunidad que nunca me dejó bajar los brazos.",
+        "sentiment": "positive",
+        "topics": [
+          "cambio_carrera",
+          "empleo",
+          "inspiracion",
+          "primer_contrato"
+        ],
+        "type": "SUCCESS_STORY",
+        "score": 0.93,
+        "reason": "Historia de reconversión profesional a los 42 años con primer contrato firmado; máxima resonancia emocional y engagement récord del período (84 reacciones)."
+      },
       "contenido": {
         "titulo": "Nunca es tarde: de 15 años en logística a desarrollador a los 42",
         "copy": "Hoy queremos celebrar una historia que redefine lo que significa 'empezar de nuevo'. 💪\n\nErnesto pasó 15 años trabajando en logística. Hace unos meses, contra la opinión de casi todos, decidió apostar por la tecnología y comenzó su formación desde cero.\n\nHoy firmó su primer contrato como desarrollador.\n\n'Si estás dudando si es tarde para cambiar de carrera: no lo es', escribió a su comunidad, la misma que —en sus palabras— nunca lo dejó bajar los brazos.\n\nHistorias como la de Ernesto nos recuerdan por qué hacemos lo que hacemos. La edad no es el límite; el primer paso sí. 🚀\n\n¿Conocés a alguien que esté dudando en dar ese paso? Etiquetalo. 👇",
-        "hashtags": ["#CambioDeCarrera", "#NuncaEsTarde", "#CarreraTech", "#TalentosTech"],
+        "hashtags": [
+          "#CambioDeCarrera",
+          "#NuncaEsTarde",
+          "#CarreraTech",
+          "#TalentosTech"
+        ],
         "canal_recomendado": "LinkedIn Oficial",
         "potencial_engagement": "alto"
       }
@@ -30,11 +67,32 @@
       "activo_id": "POST-002",
       "formato": "post_linkedin",
       "estado_curaduria": "aprobado",
-      "lineage": { "opportunity_id": "OPP-020", "message_id": "MSG-0020" },
+      "origen": {
+        "message_id": "MSG-0020",
+        "opportunity_id": "OPP-020",
+        "channel": "logros-y-empleos",
+        "autor": "Patricia N.",
+        "message": "Hoy me confirmaron el ascenso a Analista de Automatización en mi empresa. Hace un año era asistente administrativa y empecé el bootcamp sin saber programar. Presenté tres flujos con IA que ahorran 20 horas semanales al equipo y eso cerró el ascenso. Se puede, de verdad se puede.",
+        "sentiment": "positive",
+        "topics": [
+          "ascenso",
+          "automatizacion",
+          "cambio_carrera",
+          "impacto_laboral"
+        ],
+        "type": "SUCCESS_STORY",
+        "score": 0.92,
+        "reason": "Ascenso con métrica de impacto concreta (20 horas semanales ahorradas) y arco narrativo fuerte: de asistente administrativa a analista de automatización en un año."
+      },
       "contenido": {
         "titulo": "De asistente administrativa a Analista de Automatización: el ascenso de Patricia",
         "copy": "Hace un año, Patricia era asistente administrativa y no sabía programar.\n\nHoy le confirmaron su ascenso a Analista de Automatización. 🎉\n\n¿La clave? Presentó a su empresa tres flujos de automatización con IA que ahorran 20 horas semanales a su equipo. No fue suerte: fue formación aplicada a problemas reales.\n\n'Se puede, de verdad se puede', le escribió a su comunidad de estudio.\n\nEl mejor portfolio es el impacto medible. 📊",
-        "hashtags": ["#Automatizacion", "#InteligenciaArtificial", "#MujeresEnTech", "#CarreraDev"],
+        "hashtags": [
+          "#Automatizacion",
+          "#InteligenciaArtificial",
+          "#MujeresEnTech",
+          "#CarreraDev"
+        ],
         "canal_recomendado": "LinkedIn Oficial",
         "potencial_engagement": "alto"
       }
@@ -43,7 +101,23 @@
       "activo_id": "NEWS-001",
       "formato": "destaque_newsletter",
       "estado_curaduria": "borrador",
-      "lineage": { "opportunity_id": "OPP-001", "message_id": "MSG-0001" },
+      "origen": {
+        "message_id": "MSG-0001",
+        "opportunity_id": "OPP-001",
+        "channel": "logros-y-empleos",
+        "autor": "Valeria Q.",
+        "message": "¡Comunidad, no lo puedo creer! Quedé seleccionada como Data Analyst Jr en una fintech. En la entrevista técnica me preguntaron por el proyecto de pipeline con LangChain y OCI que armé en el bootcamp y eso marcó la diferencia. ¡Gracias a todos por el apoyo!",
+        "sentiment": "positive",
+        "topics": [
+          "empleo",
+          "data_analysis",
+          "langchain",
+          "oci"
+        ],
+        "type": "SUCCESS_STORY",
+        "score": 0.94,
+        "reason": "La usuaria reporta su contratación como Data Analyst Jr destacando el proyecto del bootcamp como factor decisivo."
+      },
       "contenido": {
         "seccion": "Logro de la Semana",
         "titular": "Estudiante consigue su primer empleo como Data Analyst con su portfolio de IA",
@@ -54,7 +128,22 @@
       "activo_id": "FAQ-001",
       "formato": "sugerencia_faq",
       "estado_curaduria": "publicado",
-      "lineage": { "opportunity_id": "OPP-002", "message_id": "MSG-0002" },
+      "origen": {
+        "message_id": "MSG-0002",
+        "opportunity_id": "OPP-002",
+        "channel": "dudas-langgraph",
+        "autor": "Luis A.",
+        "message": "Tengo dudas sobre cómo estructurar los nodos condicionales en LangGraph cuando la respuesta del LLM necesita reintento. ¿Alguien tiene un ejemplo práctico de un router con retry?",
+        "sentiment": "neutral",
+        "topics": [
+          "langgraph",
+          "nodos_condicionales",
+          "retry"
+        ],
+        "type": "FAQ",
+        "score": 0.82,
+        "reason": "Duda técnica específica y reutilizable sobre routers con reintento en LangGraph, con buena participación del canal."
+      },
       "contenido": {
         "tema": "Tip Rápido: cómo crear nodos de reintento en LangGraph",
         "cuerpo": "Cuando la respuesta del LLM puede fallar o venir mal formada, la solución en LangGraph es un nodo router: después del nodo que llama al LLM, agregá una función condicional que valide la salida (por ejemplo, que el JSON parsee correctamente). Si la validación falla, el router redirige de vuelta al nodo generador — con un contador en el estado del grafo para limitar los reintentos (2 o 3 máximo) y una rama de fallback si se agotan. Patrón: generador → validador → (ok: continuar | error y quedan intentos: volver al generador | error sin intentos: fallback).",
@@ -65,7 +154,23 @@
       "activo_id": "FAQ-002",
       "formato": "sugerencia_faq",
       "estado_curaduria": "borrador",
-      "lineage": { "opportunity_id": "OPP-029", "message_id": "MSG-0029" },
+      "origen": {
+        "message_id": "MSG-0029",
+        "opportunity_id": "OPP-029",
+        "channel": "dudas-tecnicas",
+        "autor": "Tania J.",
+        "message": "Sigo con el error 401 NotAuthenticated al usar el SDK de OCI desde Python. Ya configuré el archivo config con el fingerprint y la key. ¿Qué más puede ser? Veo que varios tuvimos problemas parecidos esta semana.",
+        "sentiment": "negative",
+        "topics": [
+          "oci",
+          "sdk_python",
+          "error_401",
+          "autenticacion"
+        ],
+        "type": "TREND",
+        "score": 0.78,
+        "reason": "Quinta consulta sobre configuración/autenticación de OCI en la semana (MSG-0004, 0011, 0016, 0022, 0029): patrón que amerita guía consolidada y aviso a mentores."
+      },
       "contenido": {
         "tema": "Guía consolidada: configuración y autenticación del SDK de OCI en Python",
         "cuerpo": "Esta semana se registraron 5 consultas sobre configuración de OCI (errores 401/403, API keys, namespace, put_object). Se sugiere publicar una guía única que cubra: 1) generación de API keys y archivo ~/.oci/config, 2) obtención del namespace del tenancy, 3) snippet mínimo de put_object funcionando, 4) checklist de troubleshooting para 401 (fingerprint, ruta de la key, región) y 403 (políticas del bucket).",
@@ -76,11 +181,30 @@
       "activo_id": "POST-003",
       "formato": "post_linkedin",
       "estado_curaduria": "descartado",
-      "lineage": { "opportunity_id": "OPP-013", "message_id": "MSG-0013" },
+      "origen": {
+        "message_id": "MSG-0013",
+        "opportunity_id": "OPP-013",
+        "channel": "logros-y-empleos",
+        "autor": "Sofia G.",
+        "message": "Pasé la entrevista técnica de una consultora grande. Las mock interviews que organizamos en la comunidad fueron clave: la pregunta de diseño de sistemas era casi igual a la que practicamos la semana pasada.",
+        "sentiment": "positive",
+        "topics": [
+          "entrevista",
+          "mock_interviews",
+          "empleo"
+        ],
+        "type": "SUCCESS_STORY",
+        "score": 0.85,
+        "reason": "Entrevista técnica aprobada atribuida a las mock interviews comunitarias; destaca el valor de la comunidad misma."
+      },
       "contenido": {
         "titulo": "Las mock interviews de la comunidad funcionan",
         "copy": "Sofia aprobó la entrevista técnica de una consultora grande, y cuenta que las mock interviews organizadas por su propia comunidad de estudio fueron la clave: la pregunta de diseño de sistemas era casi igual a la que había practicado la semana anterior. Practicar en comunidad rinde. 🤝",
-        "hashtags": ["#MockInterview", "#ComunidadTech", "#Empleabilidad"],
+        "hashtags": [
+          "#MockInterview",
+          "#ComunidadTech",
+          "#Empleabilidad"
+        ],
         "canal_recomendado": "LinkedIn Oficial",
         "potencial_engagement": "medio"
       }

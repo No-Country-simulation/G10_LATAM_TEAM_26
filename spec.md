@@ -72,7 +72,7 @@ Este documento define las **interfaces JSON entre los módulos del sistema**. Es
 | `interacciones[].channel` | string | Nombre del canal sin `#` |
 | `interacciones[].timestamp` | datetime | Fecha original del mensaje |
 | `interacciones[].autor` | string | **Anonimizado**: nombre + inicial, o alias (nunca datos de contacto) |
-| `interacciones[].tipo_declarado` | enum | `testimonio` \| `pregunta_tecnica` \| `feedback` \| `logro` \| `conversacion` \| `otro` — clasificación *heurística* de ingesta; el análisis real lo hace el Agente 1 |
+| `interacciones[].tipo_declarado` | enum, **opcional** (default `otro`) | `testimonio` \| `pregunta_tecnica` \| `feedback` \| `logro` \| `conversacion` \| `otro` — pista opcional, NO es tarea de ingesta clasificar; la clasificación real la hace el Opportunity Detector |
 | `interacciones[].texto` | string | Texto limpio, sin menciones crudas ni PII |
 | `interacciones[].metadata` | object, opcional | `reacciones` (int), `respuestas` (int) — insumo del score de engagement |
 
@@ -162,9 +162,17 @@ Este documento define las **interfaces JSON entre los módulos del sistema**. Es
       "activo_id": "POST-034",
       "formato": "post_linkedin",
       "estado_curaduria": "borrador",
-      "lineage": {
+      "origen": {
+        "message_id": "MSG-8921",
         "opportunity_id": "OPP-021",
-        "message_id": "MSG-8921"
+        "channel": "logros",
+        "autor": "Mariana S.",
+        "message": "Comunidad, quedé seleccionada para el puesto de Desarrolladora Junior de IA!...",
+        "sentiment": "positive",
+        "topics": ["empleo", "langchain", "oci"],
+        "type": "SUCCESS_STORY",
+        "score": 0.94,
+        "reason": "Logro concreto ya ocurrido, contado con detalles."
       },
       "contenido": {
         "titulo": "De la Comunidad al Mercado: el impacto de los proyectos prácticos de IA",
@@ -178,9 +186,17 @@ Este documento define las **interfaces JSON entre los módulos del sistema**. Es
       "activo_id": "NEWS-012",
       "formato": "destaque_newsletter",
       "estado_curaduria": "borrador",
-      "lineage": {
+      "origen": {
+        "message_id": "MSG-8921",
         "opportunity_id": "OPP-021",
-        "message_id": "MSG-8921"
+        "channel": "logros",
+        "autor": "Mariana S.",
+        "message": "Comunidad, quedé seleccionada para el puesto de Desarrolladora Junior de IA!...",
+        "sentiment": "positive",
+        "topics": ["empleo", "langchain", "oci"],
+        "type": "SUCCESS_STORY",
+        "score": 0.94,
+        "reason": "Logro concreto ya ocurrido, contado con detalles."
       },
       "contenido": {
         "seccion": "Logro de la Semana",
@@ -192,10 +208,7 @@ Este documento define las **interfaces JSON entre los módulos del sistema**. Es
       "activo_id": "FAQ-007",
       "formato": "sugerencia_faq",
       "estado_curaduria": "borrador",
-      "lineage": {
-        "opportunity_id": "OPP-022",
-        "message_id": "MSG-8934"
-      },
+      "origen": { "message_id": "MSG-8934", "opportunity_id": "OPP-022", "channel": "dudas-langgraph", "autor": "Lucas A.", "message": "…", "sentiment": "neutral", "topics": ["langgraph"], "type": "FAQ", "score": 0.82, "reason": "…" },
       "contenido": {
         "tema": "Tip Rápido: cómo crear nodos de reintento en LangGraph",
         "cuerpo": "Cuando la respuesta del LLM necesita reintento, definí un nodo router que evalúe la salida...",
@@ -217,12 +230,12 @@ Este documento define las **interfaces JSON entre los módulos del sistema**. Es
 |---|---|---|
 | `status` | enum | `exito` \| `parcial` \| `error` |
 | `paquete_id` | string | Patrón `PKG-<año>-S<semana>-###`, único |
-| `resumen_comunidad` | object | Métricas del lote — es lo que alimenta el dashboard |
+| `resumen_comunidad` | object | Métricas del lote (alimenta el dashboard) — incluye `tendencias_detectadas`: lista de `{tema, menciones, descripcion}` que el sistema calcula por AGREGACIÓN (4+ mensajes del mismo tema), no por IA |
 | `activos[]` | array | 0 o más activos; cada uno autocontenido |
 | `activos[].activo_id` | string | `POST-####` (LinkedIn) \| `NEWS-####` (newsletter) \| `FAQ-####` |
 | `activos[].formato` | enum | `post_linkedin` \| `destaque_newsletter` \| `sugerencia_faq` |
 | `activos[].estado_curaduria` | enum | `borrador` \| `aprobado` \| `publicado` \| `descartado` — **siempre nace como `borrador`**; solo el panel lo cambia |
-| `activos[].lineage` | object | Trazabilidad obligatoria: `opportunity_id` + `message_id` de origen |
+| `activos[].origen` | object | **Autocontenido**: todo lo que la UI necesita del mensaje que dio nacimiento a la pieza — `message_id`, `opportunity_id`, `channel`, `autor`, `message` (texto original), `sentiment`, `topics`, `type`, `score`, `reason`. El panel no busca en ningún otro archivo |
 | `activos[].contenido` | object | Estructura según `formato` (ver ejemplos arriba) |
 | `almacenamiento_oci` | object | Referencia real del objeto en el bucket |
 
@@ -267,3 +280,4 @@ Para que todos los carriles usen **los mismos datos falsos**, el repo incluye en
 | Versión | Fecha | Cambio | Aprobado por |
 |---|---|---|---|
 | 1.0 | 2026-09-18 | Versión inicial: formatos A, P y B | *pendiente de ratificación en reunión* |
+| 1.0 (rev. 22/09) | 2026-09-22 | Formato B: `lineage` → `origen` autocontenido (fusión con el diseño del panel); `tendencias_detectadas` en el resumen; `tipo_declarado` pasa a opcional. Se mantiene como 1.0 por decisión del equipo (nada publicado con la forma anterior) | Gregory |
