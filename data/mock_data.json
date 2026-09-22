@@ -1,0 +1,38 @@
+[
+    {
+        "id": "MSG-001",
+        "channel": "logros",
+        "message": "Conseguí mi primer empleo como Data Analyst gracias al bootcamp",
+        "sentiment": "positive",
+        "topics": ["empleabilidad", "data analytics"],
+        "type": "SUCCESS_STORY",
+        "score": 0.94,
+        "linkedin": "🚀 Hoy celebramos una nueva historia de éxito. Un estudiante consiguió su primer empleo como Data Analyst gracias al esfuerzo y al apoyo de la comunidad.",
+        "newsletter": "Esta semana celebramos que un estudiante consiguió su primer empleo como Data Analyst.",
+        "faq": ""
+    },
+    {
+        "id": "MSG-002",
+        "channel": "dudas-tecnicas",
+        "message": "¿Cómo configurar reintentos automáticos en LangGraph?",
+        "sentiment": "neutral",
+        "topics": ["langgraph"],
+        "type": "FAQ",
+        "score": 0.83,
+        "linkedin": "",
+        "newsletter": "",
+        "faq": "Para configurar reintentos en LangGraph se utilizan políticas de retry y control de errores."
+    },
+    {
+        "id": "MSG-003",
+        "channel": "oracle",
+        "message": "OCI está siendo muy consultado esta semana",
+        "sentiment": "positive",
+        "topics": ["OCI"],
+        "type": "TREND",
+        "score": 0.91,
+        "linkedin": "📈 OCI se está convirtiendo en uno de los temas más comentados de la comunidad.",
+        "newsletter": "OCI registró un incremento notable en consultas durante la semana.",
+        "faq": ""
+    }
+]
