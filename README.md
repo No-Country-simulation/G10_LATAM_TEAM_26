@@ -12,14 +12,18 @@ Solución impulsada por IA que transforma las conversaciones no estructuradas de
 
 | Integrante | Rol | LinkedIn |
 |---|---|---|
+| Carolhay Ttito | 📥 Ingesta de datos | *Pendiente* |
+| Jhon Giraldo | 📥 Ingesta de datos | *Pendiente* |
+| Gregory Morales | 🧠 IA / LLM | [linkedin.com/in/gregory-morales](https://www.linkedin.com/in/gregory-morales-50827428a/) |
+| Axel Cañete | 🧠 IA / LLM | [py.linkedin.com/in/axel-cañete](https://py.linkedin.com/in/axel-ca%C3%B1ete-a95688299) |
+| Anthony Uceda | 🖥️ Frontend (Streamlit) | [linkedin.com/in/anthony-frank-uceda-alfaro](https://www.linkedin.com/in/anthony-frank-uceda-alfaro-141b21394/) |
+| Álvaro | 🖥️ Frontend (Streamlit) | *Pendiente* |
+| Zurian | ☁️ Cloud / OCI | *Pendiente* |
 | Celeste Box | *Por definir* | [linkedin.com/in/incbox](https://linkedin.com/in/incbox) |
-| Gregory Morales | *Por definir* | [linkedin.com/in/gregory-morales](https://www.linkedin.com/in/gregory-morales-50827428a/) |
-| Anthony Uceda | *Por definir* | [linkedin.com/in/anthony-frank-uceda-alfaro](https://www.linkedin.com/in/anthony-frank-uceda-alfaro-141b21394/) |
-| Carolhay Ttito | *Por definir* | *Pendiente* |
-| Jhon Giraldo | *Por definir* | *Pendiente* |
 | Hernan | *Por definir* | *Pendiente* |
-| Axel Cañete | *Por definir* | [py.linkedin.com/in/axel-cañete](https://py.linkedin.com/in/axel-ca%C3%B1ete-a95688299) |
 | Juan | *Por definir* | *Pendiente* |
+
+> ☁️ **Nota sobre OCI:** Zurian lidera la integración con Oracle Cloud, con apoyo de todo el equipo — es la etapa final del proyecto (la interfaz de guardado ya está congelada para conectarla sin cambios en el resto del sistema).
 
 ---
 
