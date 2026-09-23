@@ -1,0 +1,38 @@
+{
+  "actualizado": "2026-09-22T22:24:31.014877+00:00",
+  "servidores": [
+    {
+      "servidor": "Community Lab Server",
+      "canales": [
+        {
+          "canal": "bienvenida-y-normas",
+          "acceso_lectura": true
+        },
+        {
+          "canal": "notas-y-recursos",
+          "acceso_lectura": true
+        },
+        {
+          "canal": "general",
+          "acceso_lectura": true
+        },
+        {
+          "canal": "ayuda-con-la-tarea",
+          "acceso_lectura": true
+        },
+        {
+          "canal": "planificación-de-sesiones",
+          "acceso_lectura": true
+        },
+        {
+          "canal": "logros-y-empleo",
+          "acceso_lectura": true
+        },
+        {
+          "canal": "dudas-tecnicas",
+          "acceso_lectura": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+services:
+  communitylab-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: communitylab_web
+    ports:
+      - "8510:8501"  # Mapea tu puerto local 8510 al 8501 interno del contenedor
+    env_file:
+      - .env
+    volumes:
+      # Monta tu código en tiempo real: cualquier cambio que hagas en VS Code se refleja sin reconstruir la imagen
+      - ./src:/app/src
+      - ./run_app.py:/app/run_app.py
+      - ./data:/app/data
+    restart: unless-stopped
