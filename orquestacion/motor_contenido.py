@@ -58,7 +58,7 @@ PROVEEDORES = {
 PROVEEDOR = os.getenv("LLM_PROVIDER", "gemini").lower()
 RESPALDO = "groq" if PROVEEDOR == "gemini" else "gemini"
 
-UMBRALES_POR_TIPO = {"SUCCESS_STORY": 0.8, "LOGRO": 0.8, "FAQ": 0.65}  # tipos que generan contenido
+UMBRALES_POR_TIPO = {"SUCCESS_STORY": 0.8, "LOGRO": 0.8, "FAQ": 0.7}  # tipos que generan contenido
 TEMA_SOCIAL = "social"
 TAMANO_LOTE = 20
 TAMANO_LOTE_CONTENIDO = 8
