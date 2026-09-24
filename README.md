@@ -19,7 +19,7 @@ Solución impulsada por IA que transforma las conversaciones no estructuradas de
 | Anthony Uceda | 🖥️ Frontend (Streamlit) | [linkedin.com/in/anthony-frank-uceda-alfaro](https://www.linkedin.com/in/anthony-frank-uceda-alfaro-141b21394/) |
 | Álvaro | 🖥️ Frontend (Streamlit) | *Pendiente* |
 | Zurian | ☁️ Cloud / OCI | *Pendiente* |
-| Celeste Box | *Por definir* | [linkedin.com/in/incbox](https://linkedin.com/in/incbox) |
+| Celeste Box | 📥 Ingesta de datos | [linkedin.com/in/incbox](https://linkedin.com/in/incbox) |
 | Hernan | *Por definir* | *Pendiente* |
 | Juan | *Por definir* | *Pendiente* |
 
