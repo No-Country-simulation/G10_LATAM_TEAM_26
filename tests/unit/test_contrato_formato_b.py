@@ -61,3 +61,24 @@ def test_mensajes_vacios_se_descartan():
     paquete = procesar([{"message_id": "M1", "texto": "   "}, {"message_id": "M2", "texto": "hola a todos"}],
                        simulado=True)
     assert paquete["resumen_comunidad"]["total_interacciones_procesadas"] == 1
+
+
+def test_fixtures_oficiales_cumplen_el_contrato():
+    """Los fixtures de spec.md son la referencia de los demás módulos: deben validar contra los schemas actuales."""
+    import json
+    from src.core.agents.detector import es_oportunidad
+    from src.domain.schemas import OpportunityType
+
+    paquete = json.load(open("data/fixtures/paquete_ejemplo_formato_b.json", encoding="utf-8"))
+    PaqueteDistribucion.model_validate(paquete)
+
+    procesados = json.load(open("data/fixtures/procesados_ejemplo_formato_p.json", encoding="utf-8"))["procesados"]
+    tipos_validos = {t.value for t in OpportunityType}
+    for p in procesados:
+        o = p["opportunity"]
+        assert o["type"] in tipos_validos, o
+        # opportunity_id solo para los mensajes que superan el umbral de su tipo
+        assert bool(o["opportunity_id"]) == es_oportunidad({"type": o["type"], "score": o["opportunity_score"]}), o
+    ids = [p["opportunity"]["opportunity_id"] for p in procesados if p["opportunity"]["opportunity_id"]]
+    assert paquete["resumen_comunidad"]["oportunidades_detectadas"] == len(ids)
+    assert {a["origen"]["opportunity_id"] for a in paquete["activos"]} <= set(ids)

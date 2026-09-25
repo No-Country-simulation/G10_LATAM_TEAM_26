@@ -1,7 +1,7 @@
 {
   "formato_version": "1.0",
   "status": "exito",
-  "paquete_id": "PKG-2026-S04-001",
+  "paquete_id": "PKG-2026-S04-203000",
   "origen_comunidad": "Discord_Grupo_ONE_G10",
   "periodo_referencia": "Semana_04",
   "fecha_generacion": "2026-09-18T20:30:00Z",
@@ -9,22 +9,45 @@
     "total_interacciones_procesadas": 30,
     "sentimiento_predominante": "positive",
     "distribucion_sentimiento": {
-      "positive": 14,
-      "neutral": 10,
+      "positive": 15,
+      "neutral": 9,
       "negative": 6
     },
     "temas_principales": [
-      "contratacion/logros",
-      "oci/configuracion",
+      "oci",
+      "empleo",
+      "sdk_python",
       "langgraph",
-      "prompts"
+      "object_storage"
     ],
-    "oportunidades_detectadas": 12,
+    "oportunidades_detectadas": 17,
+    "consultas_operativas": 0,
+    "feedback_recibido": 6,
     "tendencias_detectadas": [
       {
         "tema": "oci",
-        "menciones": 5,
-        "descripcion": "5 mensajes sobre 'oci' en el período — conviene publicar una guía o aviso"
+        "menciones": 8,
+        "descripcion": "8 mensajes sobre oci en semana 04 (5 preguntas técnicas, 1 historia de éxito, 1 feedback, 1 logro)"
+      },
+      {
+        "tema": "empleo",
+        "menciones": 4,
+        "descripcion": "4 mensajes sobre empleo en semana 04 (4 historias de éxito)"
+      },
+      {
+        "tema": "sdk_python",
+        "menciones": 3,
+        "descripcion": "3 mensajes sobre sdk_python en semana 04 (3 preguntas técnicas)"
+      },
+      {
+        "tema": "langgraph",
+        "menciones": 2,
+        "descripcion": "2 mensajes sobre langgraph en semana 04 (1 pregunta técnica, 1 mensaje general)"
+      },
+      {
+        "tema": "object_storage",
+        "menciones": 2,
+        "descripcion": "2 mensajes sobre object_storage en semana 04 (2 preguntas técnicas)"
       }
     ]
   },
@@ -35,7 +58,7 @@
       "estado_curaduria": "borrador",
       "origen": {
         "message_id": "MSG-0028",
-        "opportunity_id": "OPP-028",
+        "opportunity_id": "OPP-016",
         "channel": "logros-y-empleos",
         "autor": "Ernesto V.",
         "message": "A los 42 años, después de 15 en logística, hoy firmé mi primer contrato como desarrollador. Mi familia pensaba que estaba loco cuando empecé el bootcamp. Si estás dudando si es tarde para cambiar de carrera: no lo es. Gracias a esta comunidad que nunca me dejó bajar los brazos.",
@@ -51,13 +74,13 @@
         "reason": "Historia de reconversión profesional a los 42 años con primer contrato firmado; máxima resonancia emocional y engagement récord del período (84 reacciones)."
       },
       "contenido": {
-        "titulo": "Nunca es tarde: de 15 años en logística a desarrollador a los 42",
-        "copy": "Hoy queremos celebrar una historia que redefine lo que significa 'empezar de nuevo'. 💪\n\nErnesto pasó 15 años trabajando en logística. Hace unos meses, contra la opinión de casi todos, decidió apostar por la tecnología y comenzó su formación desde cero.\n\nHoy firmó su primer contrato como desarrollador.\n\n'Si estás dudando si es tarde para cambiar de carrera: no lo es', escribió a su comunidad, la misma que —en sus palabras— nunca lo dejó bajar los brazos.\n\nHistorias como la de Ernesto nos recuerdan por qué hacemos lo que hacemos. La edad no es el límite; el primer paso sí. 🚀\n\n¿Conocés a alguien que esté dudando en dar ese paso? Etiquetalo. 👇",
+        "titulo": "De 15 años en logística a su primer contrato como desarrollador",
+        "copy": "Quince años en logística. Un bootcamp que en casa parecía una locura. Y hoy, a los 42, el primer contrato como desarrollador.\n\nLo que más resuena de esta historia es el mensaje para quien está en la misma duda: \"Si estás dudando si es tarde para cambiar de carrera: no lo es.\"\n\nDetrás de ese contrato hubo constancia y una comunidad que acompañó cada paso del camino.\n\n¿Qué te está frenando a ti para dar ese salto?",
         "hashtags": [
           "#CambioDeCarrera",
           "#NuncaEsTarde",
           "#CarreraTech",
-          "#TalentosTech"
+          "#Comunidad"
         ],
         "canal_recomendado": "LinkedIn Oficial",
         "potencial_engagement": "alto"
@@ -69,7 +92,7 @@
       "estado_curaduria": "aprobado",
       "origen": {
         "message_id": "MSG-0020",
-        "opportunity_id": "OPP-020",
+        "opportunity_id": "OPP-011",
         "channel": "logros-y-empleos",
         "autor": "Patricia N.",
         "message": "Hoy me confirmaron el ascenso a Analista de Automatización en mi empresa. Hace un año era asistente administrativa y empecé el bootcamp sin saber programar. Presenté tres flujos con IA que ahorran 20 horas semanales al equipo y eso cerró el ascenso. Se puede, de verdad se puede.",
@@ -85,13 +108,13 @@
         "reason": "Ascenso con métrica de impacto concreta (20 horas semanales ahorradas) y arco narrativo fuerte: de asistente administrativa a analista de automatización en un año."
       },
       "contenido": {
-        "titulo": "De asistente administrativa a Analista de Automatización: el ascenso de Patricia",
-        "copy": "Hace un año, Patricia era asistente administrativa y no sabía programar.\n\nHoy le confirmaron su ascenso a Analista de Automatización. 🎉\n\n¿La clave? Presentó a su empresa tres flujos de automatización con IA que ahorran 20 horas semanales a su equipo. No fue suerte: fue formación aplicada a problemas reales.\n\n'Se puede, de verdad se puede', le escribió a su comunidad de estudio.\n\nEl mejor portfolio es el impacto medible. 📊",
+        "titulo": "Del área administrativa a Analista de Automatización en un año",
+        "copy": "Hace un año: un puesto administrativo y ninguna línea de código escrita. Hoy: el ascenso a Analista de Automatización.\n\n¿Qué cerró la decisión? Tres flujos con IA que le ahorran 20 horas semanales al equipo. Un impacto que se puede medir y que habla por sí solo.\n\n\"Se puede, de verdad se puede.\" Así lo resume quien vivió el cambio desde adentro.\n\n¿Qué proceso de tu trabajo podrías automatizar esta semana?",
         "hashtags": [
           "#Automatizacion",
           "#InteligenciaArtificial",
-          "#MujeresEnTech",
-          "#CarreraDev"
+          "#CarreraTech",
+          "#Comunidad"
         ],
         "canal_recomendado": "LinkedIn Oficial",
         "potencial_engagement": "alto"
@@ -120,8 +143,8 @@
       },
       "contenido": {
         "seccion": "Logro de la Semana",
-        "titular": "Estudiante consigue su primer empleo como Data Analyst con su portfolio de IA",
-        "resumen": "Valeria fue seleccionada como Data Analyst Jr en una fintech. En la entrevista técnica, el proyecto de pipeline con LangChain y OCI que construyó durante el bootcamp marcó la diferencia. Otra prueba de que los proyectos prácticos abren puertas."
+        "titular": "Un proyecto del bootcamp abre la puerta a una fintech",
+        "resumen": "En la entrevista técnica para el puesto de Data Analyst Jr preguntaron por el pipeline con LangChain y OCI armado durante el bootcamp, y eso marcó la diferencia."
       }
     },
     {
@@ -145,8 +168,8 @@
         "reason": "Duda técnica específica y reutilizable sobre routers con reintento en LangGraph, con buena participación del canal."
       },
       "contenido": {
-        "tema": "Tip Rápido: cómo crear nodos de reintento en LangGraph",
-        "cuerpo": "Cuando la respuesta del LLM puede fallar o venir mal formada, la solución en LangGraph es un nodo router: después del nodo que llama al LLM, agregá una función condicional que valide la salida (por ejemplo, que el JSON parsee correctamente). Si la validación falla, el router redirige de vuelta al nodo generador — con un contador en el estado del grafo para limitar los reintentos (2 o 3 máximo) y una rama de fallback si se agotan. Patrón: generador → validador → (ok: continuar | error y quedan intentos: volver al generador | error sin intentos: fallback).",
+        "tema": "¿Cómo estructurar nodos condicionales con reintento en LangGraph?",
+        "cuerpo": "Puedes resolverlo con un nodo router que valide la salida del LLM antes de seguir. Si la validación falla, el router devuelve el flujo al nodo generador, y un contador en el estado evita los bucles infinitos.\n1. Agrega al estado un campo 'intentos' que empiece en 0.\n2. Crea una función que valide la respuesta (por ejemplo, que el JSON se pueda parsear) y sume un intento.\n3. Conéctala con 'add_conditional_edges': si la respuesta es válida, continúa; si falla y quedan intentos, vuelve al generador.\n4. Define una rama de respaldo para cuando se agoten los intentos (2 o 3 suele bastar).",
         "origen_descripcion": "Duda frecuente planteada en el canal de dudas de LangGraph"
       }
     },
@@ -156,7 +179,7 @@
       "estado_curaduria": "borrador",
       "origen": {
         "message_id": "MSG-0029",
-        "opportunity_id": "OPP-029",
+        "opportunity_id": "OPP-017",
         "channel": "dudas-tecnicas",
         "autor": "Tania J.",
         "message": "Sigo con el error 401 NotAuthenticated al usar el SDK de OCI desde Python. Ya configuré el archivo config con el fingerprint y la key. ¿Qué más puede ser? Veo que varios tuvimos problemas parecidos esta semana.",
@@ -167,14 +190,14 @@
           "error_401",
           "autenticacion"
         ],
-        "type": "TREND",
+        "type": "FAQ",
         "score": 0.78,
-        "reason": "Quinta consulta sobre configuración/autenticación de OCI en la semana (MSG-0004, 0011, 0016, 0022, 0029): patrón que amerita guía consolidada y aviso a mentores."
+        "reason": "Duda técnica con contexto sobre la autenticación del SDK de OCI; varios miembros reportan el mismo problema esta semana."
       },
       "contenido": {
-        "tema": "Guía consolidada: configuración y autenticación del SDK de OCI en Python",
-        "cuerpo": "Esta semana se registraron 5 consultas sobre configuración de OCI (errores 401/403, API keys, namespace, put_object). Se sugiere publicar una guía única que cubra: 1) generación de API keys y archivo ~/.oci/config, 2) obtención del namespace del tenancy, 3) snippet mínimo de put_object funcionando, 4) checklist de troubleshooting para 401 (fingerprint, ruta de la key, región) y 403 (políticas del bucket).",
-        "origen_descripcion": "Tendencia detectada: 5 consultas sobre OCI entre el 14 y el 18 de septiembre (MSG-0004, 0011, 0016, 0022, 0029)"
+        "tema": "¿Cómo resolver el error 401 NotAuthenticated del SDK de OCI en Python?",
+        "cuerpo": "Un 401 indica que OCI no pudo validar la firma de tu solicitud, aunque el archivo de configuración exista. Revisa estos puntos en orden:\n1. Verifica que el fingerprint del archivo config coincida con el de la clave pública cargada en tu usuario de la consola.\n2. Comprueba que 'key_file' apunte a la clave privada correcta y que el archivo se pueda leer.\n3. Confirma que los OCID de 'user' y 'tenancy' y la región correspondan a la misma cuenta.\n4. Revisa que la hora de tu equipo esté sincronizada: una diferencia de varios minutos invalida la firma.",
+        "origen_descripcion": "Duda repetida en el canal de dudas técnicas sobre la autenticación con el SDK de OCI"
       }
     },
     {
@@ -183,7 +206,7 @@
       "estado_curaduria": "descartado",
       "origen": {
         "message_id": "MSG-0013",
-        "opportunity_id": "OPP-013",
+        "opportunity_id": "OPP-008",
         "channel": "logros-y-empleos",
         "autor": "Sofia G.",
         "message": "Pasé la entrevista técnica de una consultora grande. Las mock interviews que organizamos en la comunidad fueron clave: la pregunta de diseño de sistemas era casi igual a la que practicamos la semana pasada.",
@@ -198,8 +221,8 @@
         "reason": "Entrevista técnica aprobada atribuida a las mock interviews comunitarias; destaca el valor de la comunidad misma."
       },
       "contenido": {
-        "titulo": "Las mock interviews de la comunidad funcionan",
-        "copy": "Sofia aprobó la entrevista técnica de una consultora grande, y cuenta que las mock interviews organizadas por su propia comunidad de estudio fueron la clave: la pregunta de diseño de sistemas era casi igual a la que había practicado la semana anterior. Practicar en comunidad rinde. 🤝",
+        "titulo": "Las mock interviews de la comunidad, a prueba en una entrevista real",
+        "copy": "La pregunta de diseño de sistemas de la entrevista técnica era casi igual a la que se había practicado la semana anterior.\n\nEl resultado: una entrevista aprobada en una consultora grande, gracias a las mock interviews que organiza la propia comunidad.\n\nPracticar en grupo, con preguntas reales y devolución honesta, prepara para el momento que importa.\n\n¿Ya participaste en alguna mock interview?",
         "hashtags": [
           "#MockInterview",
           "#ComunidadTech",
@@ -212,7 +235,7 @@
   ],
   "almacenamiento_oci": {
     "bucket": "communitylab-bucket",
-    "ruta_objeto": "generated/2026-09-18/PKG-2026-S04-001.json",
+    "ruta_objeto": "generated/2026-09-18/PKG-2026-S04-203000.json",
     "status": "guardado_con_exito"
   }
 }
