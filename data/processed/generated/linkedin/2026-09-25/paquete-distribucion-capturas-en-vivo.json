@@ -1,0 +1,20 @@
+{
+  "status": "exito",
+  "resumen_comunidad": {
+    "total_interacciones_procesadas": 25,
+    "sentimiento_predominante": "Altamente Positivo",
+    "temas_principales": [
+      "Contratacion / Logros",
+      "LangChain / OCI",
+      "n8n / Automatización"
+    ]
+  },
+  "activos_distribucion_generados": {
+    "post_linkedin": {
+      "titulo": "Escuchando a la comunidad: El reto de conciliar estudio y trabajo",
+      "copy": "El feedback constante nos ayuda a evolucionar. Hoy analizamos cómo adaptar las mentorías en vivo para aquellos talentos que estudian y trabajan en paralelo. ¡La flexibilidad es clave en la educación tech del futuro! 📈🎓 #EducaciónIT #ComunidadTech #TalentoDigital",
+      "canal_recomendado": "LinkedIn Oficial",
+      "potencial_engagement": "Alto"
+    }
+  }
+}

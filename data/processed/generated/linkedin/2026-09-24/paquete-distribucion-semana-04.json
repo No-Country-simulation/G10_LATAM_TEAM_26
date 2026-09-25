@@ -1,0 +1,19 @@
+{
+  "status": "exito",
+  "resumen_comunidad": {
+    "total_interacciones_procesadas": 10,
+    "sentimiento_predominante": "Altamente Positivo",
+    "temas_principales": [
+      "Contratacion / Logros",
+      "LangChain / OCI"
+    ]
+  },
+  "activos_distribucion_generados": {
+    "post_linkedin": {
+      "titulo": "El poder de la Ingeniería de Prompts aplicada al trabajo real 💡",
+      "copy": "El feedback de nuestra comunidad nos impulsa a seguir creando contenido de alto impacto. Rosa V. nos comparte que los ejercicios de few-shot del módulo de ingeniería de prompts le sirvieron directamente en su trabajo diario. ¡La teoría aplicada es la clave del éxito! #PromptEngineering #AI #DesarrolloProfesional #EdTech",
+      "canal_recomendado": "LinkedIn Oficial",
+      "potencial_engagement": "Alto"
+    }
+  }
+}
