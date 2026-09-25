@@ -10,7 +10,9 @@ from typing import Any, Dict, List, Optional
 
 from langgraph.graph import END, StateGraph
 
+from src import config
 from src.core.agents.analyst import community_analyst
+from src.core.agents.classifier import community_classifier
 from src.core.agents.detector import hay_oportunidades, opportunity_detector
 from src.core.agents.strategist import content_strategist
 from src.core.estado import AgentState
@@ -19,17 +21,26 @@ from src.core.packager import avisos, empaquetar, formato_p
 from src.utils.sanitizer import anonimizar_texto
 
 
-def construir_grafo():
-    workflow = StateGraph(AgentState)
+def _etapa_clasificacion(workflow: StateGraph, modo: str) -> str:
+    """Agrega los nodos de clasificación y devuelve el nombre del último."""
+    if modo == "compacta":
+        workflow.add_node("community_classifier", community_classifier)
+        workflow.set_entry_point("community_classifier")
+        return "community_classifier"
     workflow.add_node("community_analyst", community_analyst)
     workflow.add_node("opportunity_detector", opportunity_detector)
-    workflow.add_node("content_strategist", content_strategist)
-    workflow.add_node("empaquetar", empaquetar)
-
     workflow.set_entry_point("community_analyst")
     workflow.add_edge("community_analyst", "opportunity_detector")
+    return "opportunity_detector"
+
+
+def construir_grafo(modo: str = config.MODO_CLASIFICACION):
+    workflow = StateGraph(AgentState)
+    ultimo = _etapa_clasificacion(workflow, modo)
+    workflow.add_node("content_strategist", content_strategist)
+    workflow.add_node("empaquetar", empaquetar)
     workflow.add_conditional_edges(
-        "opportunity_detector",
+        ultimo,
         hay_oportunidades,
         {"generar_contenido": "content_strategist", "solo_analitica": "empaquetar"},
     )
@@ -38,14 +49,10 @@ def construir_grafo():
     return workflow.compile()
 
 
-def construir_grafo_clasificacion():
-    """Primera etapa del modo por fases: analista y detector, sin redacción."""
+def construir_grafo_clasificacion(modo: str = config.MODO_CLASIFICACION):
+    """Primera etapa del modo por fases: clasificación sin redacción."""
     workflow = StateGraph(AgentState)
-    workflow.add_node("community_analyst", community_analyst)
-    workflow.add_node("opportunity_detector", opportunity_detector)
-    workflow.set_entry_point("community_analyst")
-    workflow.add_edge("community_analyst", "opportunity_detector")
-    workflow.add_edge("opportunity_detector", END)
+    workflow.add_edge(_etapa_clasificacion(workflow, modo), END)
     return workflow.compile()
 
 

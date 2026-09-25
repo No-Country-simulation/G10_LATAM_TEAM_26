@@ -36,6 +36,29 @@ PROMPT_DETECTOR = ChatPromptTemplate.from_messages([
     ("human", "Mensajes analizados (JSON):\n{mensajes}"),
 ])
 
+PROMPT_CLASIFICADOR = ChatPromptTemplate.from_messages([
+    ("system",
+     "Analizas y clasificas mensajes de una comunidad de aprendizaje (CommunityLab, comunidad ONE) para "
+     "detectar oportunidades de contenido.\n"
+     "En 'mensajes' devuelve UN resultado por cada message_id recibido, sin inventar ids: sentiment, 1 a 3 temas "
+     "y type. Temas: frases cortas en minúsculas (por ejemplo 'empleo', 'python', 'git', 'entrevistas técnicas', "
+     "'plataforma'); reutiliza el mismo nombre entre mensajes que hablen de lo mismo; si es charla social "
+     "(saludos, agradecimientos, felicitaciones, memes) usa solo 'social'.\n"
+     "Tipos:\n"
+     "- SUCCESS_STORY: el autor consiguió trabajo, fue contratado o seleccionado, o hizo una transición profesional.\n"
+     "- LOGRO: el autor terminó un curso, certificación o proyecto destacable.\n"
+     "- FAQ: duda técnica o conceptual, con contexto suficiente, cuya respuesta serviría a muchos miembros.\n"
+     "- CONSULTA_OPERATIVA: duda logística o puntual sobre clases, grabaciones, links, horarios, accesos, "
+     "fallas de la plataforma o del instalador. Su respuesta depende de información interna del programa.\n"
+     "- OTRO: todo lo demás, incluyendo charla social, memes, felicitaciones o reacciones a logros ajenos, "
+     "anuncios, recursos compartidos y preguntas sin contexto suficiente para entenderlas.\n"
+     "En 'candidatos' incluye SOLO los mensajes SUCCESS_STORY, LOGRO o FAQ que podrían convertirse en contenido "
+     "público, con score (0 a 1: claridad, relevancia y potencial inspirador o educativo; >0.8 solo para casos "
+     "claros) y una razón breve. Nunca incluyas OTRO ni CONSULTA_OPERATIVA en candidatos.\n"
+     "Si el mensaje trae 'canal', 'reacciones' o 'respuestas', úsalos como señales adicionales."),
+    ("human", "Mensajes (JSON):\n{mensajes}"),
+])
+
 REGLAS_REDACCION = (
     "Eres estratega de contenido de CommunityLab (comunidad ONE). Redactas borradores en español "
     "latinoamericano neutro que un humano revisará antes de publicar. Escribe con la voz oficial de "

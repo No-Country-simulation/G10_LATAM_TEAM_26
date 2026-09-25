@@ -27,6 +27,10 @@ TIPOS_OPORTUNIDAD = ("SUCCESS_STORY", "LOGRO", "FAQ", "CONSULTA_OPERATIVA", "OTR
 UMBRALES_POR_TIPO = {"SUCCESS_STORY": 0.8, "LOGRO": 0.8, "FAQ": 0.7}  # solo estos tipos generan contenido
 TEMA_SOCIAL = "social"
 
+# "compacta": una llamada por lote (análisis + clasificación; score y razón solo para candidatos).
+# "completa": analista y detector por separado, con score y razón para cada mensaje.
+MODO_CLASIFICACION = os.getenv("LLM_CLASIFICACION", "compacta").lower()
+
 TAMANO_LOTE = int(os.getenv("LLM_TAMANO_LOTE", "20"))
 # Con 8 piezas por llamada, el JSON de redacción supera lo que Groq valida con json_schema
 TAMANO_LOTE_CONTENIDO = int(os.getenv("LLM_TAMANO_LOTE_CONTENIDO", "4"))
