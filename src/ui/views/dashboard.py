@@ -43,5 +43,5 @@ def render_dashboard_view(dataset: BatchInputPayload | None):
             author=msg.autor,
             channel=msg.channel,
             text=msg.texto,
-            op_type=msg.tipo_declarado
+            op_type=msg.tipo_declarado or "otro"  # opcional en el Formato A; por defecto 'otro' (spec.md)
         )
