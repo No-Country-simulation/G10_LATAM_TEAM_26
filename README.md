@@ -39,6 +39,53 @@ Las comunidades digitales activas generan cientos de interacciones diarias. Entr
 | Falta de trazabilidad | Imposible asociar un activo publicado con su conversación de origen | Mapeo relacional estricto: Contenido → Oportunidad → Mensaje original |
 
 ---
+# ⚡ CommunityLab AI — Motor Inteligente de Curaduría & Transformación
+
+> **Hackathon ONE G10 — Oracle Next Education & Alura**  
+> *Track: MarTech & Community-Led Growth | Automatización con IA Generativa & Oracle Cloud Infrastructure (OCI)*
+
+---
+
+## 📌 1. Visión General del Proyecto
+**CommunityLab AI** es una solución enterprise diseñada para automatizar la extracción, análisis y transformación de conversaciones no estructuradas de comunidades digitales (Discord) en activos de marketing multiformato (LinkedIn, Newsletters semanales y FAQs para mentorías).
+
+El sistema incorpora un **filtro inteligente de priorización** (Community Opportunity Score $\ge 0.70$) para separar el 85% de ruido casual de las verdaderas oportunidades (contrataciones laborales, dudas técnicas críticas y feedback), garantizando control de calidad mediante un panel de curaduría humana (**Human-in-the-Loop**) antes de su persistencia estructurada y trazable hacia **OCI Object Storage** (capa Always Free).
+
+---
+
+## 🏛️ 2. Arquitectura de Software por Capas (Clean Architecture)
+
+El proyecto sigue una arquitectura desacoplada para garantizar que la interfaz gráfica no conozca detalles de Discord, que los agentes de IA sean independientes de la presentación y que la nube pueda cambiarse sin romper el dominio:
+
+```text
+G10_LATAM_TEAM_26/
+├── data/
+│   ├── raw/                 # Capa Bronze: Capturas de Discord en bruto (.jsonl)
+│   ├── fixtures/            # Datos controlados para pruebas offline (Formato A)
+│   └── processed/           # Capa Gold: Paquetes consolidados listos para OCI
+├── src/
+│   ├── domain/              # Modelos de datos y contratos Pydantic (Single Source of Truth)
+│   │   └── schemas.py
+│   ├── utils/               # Helpers transversales: Sanitización PII y Logger JSON
+│   │   ├── sanitizer.py
+│   │   └── logger.py
+│   ├── adapters/            # Conectores externos (Infraestructura I/O)
+│   │   ├── ingestion/       # Bot de Discord en vivo y cargadores de lotes
+│   │   │   ├── discord_bot.py
+│   │   │   └── loaders.py
+│   │   └── cloud/           # Conector a OCI Object Storage
+│   │       └── oci_storage.py
+│   ├── core/                # Capa de Lógica de Negocio y Multiagente
+│   │   ├── agents/          # Agentes especializados (Batch Agent, Detector, Strategist)
+│   │   │   ├── batch_agent.py
+│   │   │   ├── detector.py
+│   │   │   └── strategist.py
+│   │   └── orchestrator.py  # Orquestador del pipeline y filtrado condicional
+│   └── ui/                  # Interfaz Streamlit con Design System moderno
+│       ├── styles.py        # Estilos CSS adaptables (Dark / Light)
+│       ├── components/      # Tarjetas KPI y previsualizador de LinkedIn
+│       └── views/           # Módulos: Overview, Scoring, Studio y OCI
+└── tests/                   # Pruebas unitarias automatizadas con pytest
 
 ## 🏗️ Arquitectura
 

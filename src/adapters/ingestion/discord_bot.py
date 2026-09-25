@@ -1,73 +1,62 @@
 """
-CommunityLab — Bot de Discord para captura de conversaciones.
+CommunityLab AI — Adaptador de Ingesta en Tiempo Real: Bot de Discord.
+Reside formalmente en: src/adapters/ingestion/discord_bot.py
 
-Dos modos de uso:
-  1. LIVE:     escucha los canales en tiempo real y guarda cada mensaje.
-  2. BACKFILL: descarga el historial existente de los canales al arrancar.
+Modos:
+  1. LIVE: Escucha eventos on_message y persiste en JSONL.
+  2. BACKFILL: Descarga historial previo al arrancar.
 
-Los mensajes se guardan en data/raw/ como JSON Lines (un mensaje por línea),
-en formato crudo compatible con el adaptador de ingesta (Formato A).
-
-Requisitos:
-    pip install discord.py python-dotenv
-
-Configuración (.env en la raíz del proyecto):
-    DISCORD_BOT_TOKEN=tu-token-aqui
-    SERVIDORES_OBSERVADOS=      # nombres de servidores, separados por coma (vacío = todos)
-    CANALES_OBSERVADOS=         # nombres de canales, separados por coma (vacío = todos)
-    MODO_BACKFILL=true          # true = descarga historial al arrancar
-    BACKFILL_LIMITE=500         # máx. de mensajes por canal en el backfill
-
-Ejecución:
-    python -m ingesta.discord_bot
+Ejecución estándar:
+  python -m src.adapters.ingestion.discord_bot
 """
 
 import json
 import os
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 import discord
 from dotenv import load_dotenv
 
+from src.utils.logger import setup_logger
+
+logger = setup_logger("discord_bot")
 load_dotenv()
 
-TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+TOKEN = os.getenv("DISCORD_BOT_TOKEN", "").strip()
+if not TOKEN:
+    logger.error("Falta DISCORD_BOT_TOKEN en el archivo .env")
+
 CANALES_OBSERVADOS = {
     c.strip().lower()
-    for c in os.environ.get("CANALES_OBSERVADOS", "").split(",")
+    for c in os.getenv("CANALES_OBSERVADOS", "").split(",")
     if c.strip()
 }
 SERVIDORES_OBSERVADOS = {
     s.strip().lower()
-    for s in os.environ.get("SERVIDORES_OBSERVADOS", "").split(",")
+    for s in os.getenv("SERVIDORES_OBSERVADOS", "").split(",")
     if s.strip()
 }
-MODO_BACKFILL = os.environ.get("MODO_BACKFILL", "false").lower() == "true"
-BACKFILL_LIMITE = int(os.environ.get("BACKFILL_LIMITE", "500"))
+MODO_BACKFILL = os.getenv("MODO_BACKFILL", "false").lower() == "true"
+BACKFILL_LIMITE = int(os.getenv("BACKFILL_LIMITE", "500"))
 
-_BASE = Path(__file__).resolve().parent.parent
-RAW_DIR = _BASE / "data" / "raw"
-CONFIG_DIR = _BASE / "data" / "config"
-TOPOLOGIA_PATH = CONFIG_DIR / "discord_topologia.json"   # la escribe el bot
-CAPTURA_CONFIG_PATH = CONFIG_DIR / "captura_config.json"  # la escribe el panel
+# Ruta absoluta calculada a la raíz del repositorio
+_ROOT = Path(__file__).resolve().parents[3]
+RAW_DIR = _ROOT / "data" / "raw"
+CONFIG_DIR = _ROOT / "data" / "config"
+TOPOLOGIA_PATH = CONFIG_DIR / "discord_topologia.json"
+CAPTURA_CONFIG_PATH = CONFIG_DIR / "captura_config.json"
 
-# Cache de la config dinámica: se relee solo cuando el archivo cambia
 _config_cache: dict = {"mtime": None, "canales": None}
 
 intents = discord.Intents.default()
-intents.message_content = True  # requiere activar el intent en el Developer Portal
+intents.message_content = True
 
 client = discord.Client(intents=intents)
 
 
 def _config_dinamica() -> set[str] | None:
-    """Lee los canales elegidos desde el panel (captura_config.json).
-
-    Devuelve un set de claves "servidor/canal" en minúsculas, o None si el
-    archivo no existe (en ese caso rigen las variables de entorno).
-    Se cachea por mtime: cambiar el archivo aplica en caliente, sin reiniciar.
-    """
     try:
         mtime = CAPTURA_CONFIG_PATH.stat().st_mtime
     except FileNotFoundError:
@@ -79,12 +68,11 @@ def _config_dinamica() -> set[str] | None:
             for c in data.get("canales_activos", [])
         }
         _config_cache["mtime"] = mtime
-        print(f"🔄 Config de captura recargada: {len(_config_cache['canales'])} canales activos")
+        logger.info(f"Config de captura recargada: {len(_config_cache['canales'])} canales activos")
     return _config_cache["canales"]
 
 
 def _escribir_topologia(guilds: list[discord.Guild]) -> None:
-    """Publica qué servidores/canales ve el bot, para que el panel los liste."""
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     topo = {
         "actualizado": datetime.now(timezone.utc).isoformat(),
@@ -103,14 +91,11 @@ def _escribir_topologia(guilds: list[discord.Guild]) -> None:
             for g in guilds
         ],
     }
-    TOPOLOGIA_PATH.write_text(
-        json.dumps(topo, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
-    print(f"🗺️  Topología publicada en {TOPOLOGIA_PATH}")
+    TOPOLOGIA_PATH.write_text(json.dumps(topo, ensure_ascii=False, indent=2), encoding="utf-8")
+    logger.info(f"Topología publicada en {TOPOLOGIA_PATH}")
 
 
 def _servidor_observado(guild: discord.Guild | None) -> bool:
-    """Sin lista configurada se observan todos los servidores."""
     if guild is None:
         return False
     if not SERVIDORES_OBSERVADOS:
@@ -119,10 +104,6 @@ def _servidor_observado(guild: discord.Guild | None) -> bool:
 
 
 def _canal_observado(channel: discord.abc.GuildChannel) -> bool:
-    """Prioridad: config del panel (captura_config.json) > variables de entorno.
-
-    Sin config del panel ni variables, se observa todo.
-    """
     guild = getattr(channel, "guild", None)
     canales_panel = _config_dinamica()
     if canales_panel is not None:
@@ -137,13 +118,6 @@ def _canal_observado(channel: discord.abc.GuildChannel) -> bool:
 
 
 def _serializar_mensaje(msg: discord.Message) -> dict:
-    """Serializa el mensaje COMPLETO, sin filtros ni destilación.
-
-    Capa raw (bronze): se guarda todo tal como llegó — incluidos mensajes
-    de bots, mensajes cortos y campos que hoy no usamos. La limpieza,
-    el filtrado y la anonimización son responsabilidad de la fase
-    siguiente (adaptador de ingesta → Formato A), nunca de la captura.
-    """
     return {
         "id": str(msg.id),
         "type": msg.type.name,
@@ -208,12 +182,12 @@ async def _backfill_canal(channel: discord.TextChannel) -> int:
 
 @client.event
 async def on_ready():
-    print(f"✅ Bot conectado como {client.user}")
+    logger.info(f"Bot conectado como {client.user}")
     _escribir_topologia(list(client.guilds))
     if not MODO_BACKFILL:
-        print("👂 Modo LIVE: escuchando mensajes nuevos...")
+        logger.info("Modo LIVE: escuchando mensajes nuevos...")
         return
-    print(f"⏬ Backfill: descargando hasta {BACKFILL_LIMITE} mensajes por canal...")
+    logger.info(f"Backfill: descargando hasta {BACKFILL_LIMITE} mensajes por canal...")
     total = 0
     for guild in client.guilds:
         for channel in guild.text_channels:
@@ -221,25 +195,28 @@ async def on_ready():
                 continue
             permisos = channel.permissions_for(guild.me)
             if not (permisos.view_channel and permisos.read_message_history):
-                print(f"   ⚠️  Sin permisos en #{channel.name}, salteado")
+                logger.warning(f"Sin permisos en #{channel.name}, omitido")
                 continue
             n = await _backfill_canal(channel)
             total += n
-            print(f"   #{channel.name}: {n} mensajes")
-    print(f"⏬ Backfill terminado: {total} mensajes en {_ruta_salida()}")
-    print("👂 Quedo escuchando mensajes nuevos (Ctrl+C para salir)...")
+            logger.info(f"#{channel.name}: {n} mensajes descargados")
+    logger.info(f"Backfill completado: {total} mensajes en {_ruta_salida()}")
+    logger.info("Escuchando mensajes nuevos (Ctrl+C para salir)...")
 
 
 @client.event
 async def on_message(message: discord.Message):
     if message.guild is None or not _canal_observado(message.channel):
         return
-    if message.author.id == client.user.id:  # nunca capturar los mensajes propios
+    if message.author.id == client.user.id:
         return
     _guardar(_serializar_mensaje(message))
-    origen = "🤖" if message.author.bot else "📩"
-    print(f"{origen} [{message.channel.name}] {message.author.display_name}: {message.content[:60]}")
+    origen = "BOT" if message.author.bot else "USER"
+    logger.info(f"[{origen}] [{message.channel.name}] {message.author.display_name}: {message.content[:60]}")
 
 
 if __name__ == "__main__":
+    if not TOKEN:
+        print("ERROR: DISCORD_BOT_TOKEN no está definido en .env", file=sys.stderr)
+        sys.exit(1)
     client.run(TOKEN)

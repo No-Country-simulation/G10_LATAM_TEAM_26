@@ -1,0 +1,19 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv
+venv/
+ENV/
+env/
+.git
+.gitignore
+.github
+*.log
+.pytest_cache/
+tests/
+# Muy importante: nunca quemar credenciales en la imagen
+.env
+.env.*
+!data/fixtures/
