@@ -1,6 +1,8 @@
 """
 CommunityLab AI - Production UI Components
 """
+import html
+
 import streamlit as st
 
 
@@ -35,7 +37,7 @@ def render_interaction_card(msg_id: str, author: str, channel: str, text: str, o
         col_header_1, col_header_2 = st.columns([3, 1])
         with col_header_1:
             st.markdown(
-                f"**{author}** &nbsp; <code style='font-size:0.75rem; color:#475569;'>#{channel}</code>", 
+                f"**{html.escape(author)}** &nbsp; <code style='font-size:0.75rem; color:#475569;'>#{html.escape(channel)}</code>",
                 unsafe_allow_html=True
             )
         with col_header_2:
@@ -45,5 +47,5 @@ def render_interaction_card(msg_id: str, author: str, channel: str, text: str, o
                 unsafe_allow_html=True
             )
 
-        st.markdown(f"<p style='color: #334155; font-size: 0.92rem; line-height: 1.5; margin: 0.4rem 0;'>{text}</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color: #334155; font-size: 0.92rem; line-height: 1.5; margin: 0.4rem 0;'>{html.escape(text)}</p>", unsafe_allow_html=True)
         st.caption(f"Trace ID: {msg_id}")

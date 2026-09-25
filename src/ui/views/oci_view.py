@@ -1,76 +1,68 @@
 """
 CommunityLab AI - Vista: Persistencia & OCI
+Guarda el paquete completo (Formato B) con los estados de curaduría del panel.
 """
 import json
-from pathlib import Path
+
 import streamlit as st
+
 from src.adapters.cloud.oci_storage import ObjectStorageAdapter
 from src.domain.schemas import BatchInputPayload
 
 
 def render_oci_view(dataset: BatchInputPayload | None):
     st.markdown('<div class="saas-title">Trazabilidad & Oracle Cloud Infrastructure</div>', unsafe_allow_html=True)
-    st.markdown('<div class="saas-subtitle">Persistencia inmutable de activos en OCI Object Storage (capa Always Free).</div>', unsafe_allow_html=True)
+    st.markdown('<div class="saas-subtitle">Persistencia del paquete de distribución en OCI Object Storage '
+                '(capa Always Free).</div>', unsafe_allow_html=True)
 
+    paquete = st.session_state.get("paquete")
+    if not paquete:
+        st.info("Todavía no hay un paquete. Procesa un lote en 'Detección & Scoring'.")
+        return
+
+    activos = paquete["activos"]
+    aprobados = [a for a in activos if a["estado_curaduria"] == "aprobado"]
     c1, c2 = st.columns([1.2, 1], gap="large")
     with c1:
         with st.container(border=True):
-            st.markdown("##### 📍 Lineage de Datos (Trazabilidad Extremo a Extremo)")
-            approved = st.session_state.get("approved_posts", {})
-            if not approved:
-                st.info("Aún no has aprobado ningún activo en el Content Studio. Aprueba al menos uno para sincronizar.")
-            else:
-                st.markdown(f"Total de activos aprobados: **{len(approved)}**")
-                for k, item in approved.items():
-                    st.code(f"""{item['post_id']} ({item.get('tipo', 'LINKEDIN')})
- └──► OPP ({item['status']} • Score {item['score']:.2f})
-       └──► {item['origin_msg_id']} ({item['author']})""", language="text")
+            st.markdown("##### 📍 Trazabilidad de los activos aprobados")
+            if not aprobados:
+                st.info("Aún no aprobaste ningún activo en el Content Studio. El paquete se puede guardar igual: "
+                        "todos los activos viajan con su estado de curaduría.")
+            for a in aprobados:
+                st.code(f"{a['activo_id']} ({a['formato']})\n"
+                        f" └──► {a['origen']['opportunity_id']} ({a['origen']['type']} • Score {a['origen']['score']:.2f})\n"
+                        f"       └──► {a['origen']['message_id']} (#{a['origen'].get('channel') or 'sin canal'})",
+                        language="text")
 
     with c2:
         with st.container(border=True):
             st.markdown("##### ☁️ Destino OCI Object Storage (Always Free)")
-            st.markdown("**Bucket:** `communitylab-bucket`")
-            st.markdown("**Namespace:** `oracle-one-latam-g10`")
-            st.caption("Ruta configurada: `generated/linkedin/2026-semana-04/`")
+            st.markdown(f"**Bucket:** `{paquete['almacenamiento_oci']['bucket']}`")
+            st.markdown(f"**Ruta:** `{paquete['almacenamiento_oci']['ruta_objeto']}`")
+            st.markdown(f"**Paquete:** `{paquete['paquete_id']}` · estado `{paquete['status']}` · "
+                        f"{len(aprobados)} de {len(activos)} activos aprobados")
+            st.caption("Hoy se guarda en data/processed/ con la misma ruta; la subida al bucket real se conecta "
+                       "en el adaptador de OCI sin cambiar esta vista.")
 
-            if approved:
-                st.markdown("<br>", unsafe_allow_html=True)
-                if st.button("🚀 Sincronizar Paquete Consolidado", type="primary", use_container_width=True):
-                    storage = ObjectStorageAdapter()
-                    first_item = list(approved.values())[0]
-
-                    payload = {
-                        "status": "exito",
-                        "resumen_comunidad": {
-                            "total_interacciones_procesadas": len(st.session_state.get("processed_results", [])),
-                            "sentimiento_predominante": "Altamente Positivo",
-                            "temas_principales": ["Contratacion / Logros", "LangChain / OCI", "n8n / Automatización"]
-                        },
-                        "activos_distribucion_generados": {
-                            "post_linkedin": {
-                                "titulo": first_item["title"],
-                                "copy": first_item["copy"],
-                                "canal_recomendado": "LinkedIn Oficial",
-                                "potencial_engagement": "Alto"
-                            }
-                        }
-                    }
-
-                    periodo = dataset.periodo_referencia if dataset else "Semana_04"
-                    resultado = storage.persist_distribution_package(payload, periodo)
-                    st.session_state["oci_result"] = resultado
-                    st.session_state["oci_payload"] = payload
-                    st.success("¡Paquete estructurado persistido!")
+            generacion = st.session_state.get("generacion")
+            redactando = generacion is not None and not generacion.terminado
+            if redactando:
+                st.warning(f"Todavía se están redactando borradores ({len(generacion.activos)} de "
+                           f"{generacion.total_piezas}). Espera a que termine para guardar el paquete completo.")
+            if st.button("🚀 Guardar paquete", type="primary", use_container_width=True, disabled=redactando):
+                resultado = ObjectStorageAdapter().persist_distribution_package(paquete)
+                paquete["almacenamiento_oci"]["status"] = resultado["status"]
+                st.session_state["oci_result"] = resultado
+                st.success("Paquete guardado.")
 
             if "oci_result" in st.session_state:
                 st.json(st.session_state["oci_result"])
-                
-                # BOTÓN DE DESCARGA PARA EL JURADO (Requisito de demo)
-                payload_json = json.dumps(st.session_state["oci_payload"], ensure_ascii=False, indent=2)
-                st.download_button(
-                    label="💾 Descargar Paquete de Distribución (JSON)",
-                    data=payload_json,
-                    file_name="paquete-distribucion-communitylab.json",
-                    mime="application/json",
-                    use_container_width=True
-                )
+
+            st.download_button(
+                label="💾 Descargar paquete de distribución (JSON)",
+                data=json.dumps(paquete, ensure_ascii=False, indent=2),
+                file_name=f"{paquete['paquete_id']}.json",
+                mime="application/json",
+                use_container_width=True,
+            )

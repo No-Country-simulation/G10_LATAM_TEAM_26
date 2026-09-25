@@ -1,136 +1,143 @@
 """
 CommunityLab AI - Vista: Content Studio (Curaduría Multiformato)
-Permite curar Post de LinkedIn, Destaques de Newsletter y FAQs Educativas.
+Edita y aprueba los activos del paquete (Formato B). El panel es el único módulo que cambia
+estado_curaduria: borrador -> aprobado | descartado; editar un aprobado lo devuelve a borrador.
 """
 import streamlit as st
+
+from src.core.agents.strategist import regenerar_pieza
 from src.ui.components.post_editor import render_linkedin_editor
-from src.core.agents.strategist import generate_content_assets
+
+ETIQUETAS = {"post_linkedin": "📱 Post LinkedIn", "destaque_newsletter": "📰 Newsletter", "sugerencia_faq": "💡 FAQ"}
+ICONOS_ESTADO = {"borrador": "📝", "aprobado": "✅", "descartado": "🚫", "publicado": "🚀"}
+
+
+def _claves_widget(prefijo: str) -> list:
+    return [k for k in st.session_state if isinstance(k, str) and k.startswith(prefijo)]
+
+
+def _guardar(activo: dict, contenido: dict, estado: str) -> None:
+    activo["contenido"].update(contenido)
+    activo["estado_curaduria"] = estado
+
+
+def _editado(activo: dict, contenido: dict) -> bool:
+    return any(activo["contenido"].get(k) != v for k, v in contenido.items())
+
+
+@st.fragment(run_every=2)
+def progreso_studio(mostrados: int):
+    """Avisa cuántos borradores llegaron desde el último dibujo, sin recargar lo que el curador edita."""
+    generacion = st.session_state.get("generacion")
+    if not generacion:
+        return
+    listos = len(generacion.activos)
+    if mostrados == 0 and listos > 0:
+        st.rerun(scope="app")  # todavía no hay nada que editar: se puede mostrar la lista de inmediato
+    texto = f"✍️ Redactando borradores: {listos} de {generacion.total_piezas} listos."
+    if generacion.terminado:
+        texto = f"✅ Redacción terminada: {listos} de {generacion.total_piezas} borradores."
+    c_texto, c_boton = st.columns([3, 1])
+    c_texto.info(texto)
+    nuevos = listos - mostrados
+    if nuevos > 0 and c_boton.button(f"🔄 Mostrar {nuevos} nuevos", use_container_width=True):
+        st.rerun(scope="app")
 
 
 def render_studio_view():
     st.markdown('<div class="saas-title">Content Studio — Human-in-the-Loop</div>', unsafe_allow_html=True)
-    st.markdown('<div class="saas-subtitle">Supervisión, ajuste editorial multiformato y aprobación previa a OCI.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="saas-subtitle">Supervisión, ajuste editorial multiformato y aprobación previa a OCI.</div>',
+                unsafe_allow_html=True)
 
-    processed = st.session_state.get("processed_results", [])
-    high_value = [item for item in processed if item[1] is not None]
-
-    if not high_value:
-        st.warning("No hay oportunidades listas. Ve a 'Detección & Scoring' y ejecuta el análisis primero.")
+    paquete = st.session_state.get("paquete")
+    generacion = st.session_state.get("generacion")
+    # Copia de la lista: el hilo de redacción puede agregar borradores mientras se dibuja la página
+    activos = list(paquete["activos"]) if paquete else []
+    if generacion and not generacion.terminado:
+        progreso_studio(len(activos))
+    if not activos:
+        if generacion and not generacion.terminado:
+            st.info("Los primeros borradores aparecerán aquí en unos segundos.")
+        else:
+            st.warning("No hay borradores listos. Ve a 'Detección & Scoring' y ejecuta el análisis primero.")
         return
 
-    st.success(f"Se detectaron **{len(high_value)}** oportunidades de alto impacto listas para curaduría.")
+    conteo = {e: sum(1 for a in activos if a["estado_curaduria"] == e) for e in ("borrador", "aprobado", "descartado")}
+    st.success(f"**{len(activos)}** borradores en el paquete · 📝 {conteo['borrador']} por revisar · "
+               f"✅ {conteo['aprobado']} aprobados · 🚫 {conteo['descartado']} descartados")
 
-    # Selector de oportunidad
-    options = [
-        f"{p.message_id} | {p.autor_anonimizado} ({p.opportunity.type.value} - Score {p.opportunity.opportunity_score:.2f})"
-        for p, a in high_value
-    ]
-    selected_idx = st.selectbox("Selecciona una oportunidad para revisar:", range(len(options)), format_func=lambda x: options[x])
-    proc, assets = high_value[selected_idx]
+    por_id = {a["activo_id"]: a for a in activos}
+    elegido = st.selectbox(
+        "Selecciona un borrador para revisar:", list(por_id),
+        format_func=lambda i: f"{ICONOS_ESTADO[por_id[i]['estado_curaduria']]} {i} · {ETIQUETAS[por_id[i]['formato']]} · "
+                              f"{por_id[i]['origen']['type']} {por_id[i]['origen']['score']:.2f}")
+    activo = por_id[elegido]
+    origen = activo["origen"]
+    prefijo = f"{paquete['paquete_id']}_{activo['activo_id']}"
 
-    # SECCIÓN INTERACTIVA: AJUSTE CON IA
-    with st.expander("✨ Ajustar o Regenerar con IA (Human Feedback)", expanded=False):
+    with st.container(border=True):
+        st.markdown(f"**Mensaje original** · `{origen['message_id']}` · `#{origen.get('channel') or 'sin canal'}` · "
+                    f"{origen['type']} **{origen['score']:.2f}**")
+        st.markdown(f"> {origen['message']}")
+        st.caption(f"🧠 {origen['reason']}")
+
+    with st.expander("✨ Ajustar o regenerar con IA (indicaciones del curador)", expanded=False):
         c_inst, c_btn = st.columns([3, 1])
         with c_inst:
-            feedback_input = st.text_input(
-                "Instrucción para la IA:", 
-                placeholder="Ej: 'Hazlo más formal', 'Enfócate en el cambio de carrera', 'Añade un llamado a la acción'...",
-                key=f"fb_{proc.message_id}"
-            )
+            indicaciones = st.text_input(
+                "Indicación para la IA:",
+                placeholder="Ej: 'Hazlo más breve', 'Enfócate en el cambio de carrera', 'Cierra con una pregunta'...",
+                key=f"{prefijo}_indicaciones")
         with c_btn:
             st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("🔄 Regenerar Activos", use_container_width=True, key=f"btn_regen_{proc.message_id}"):
-                with st.spinner("La IA está refinando el copy con tu feedback..."):
-                    new_assets = generate_content_assets(
-                        clean_text=proc.texto_limpio,
-                        author=proc.autor_anonimizado,
-                        op_type=proc.opportunity.type,
-                        reason=proc.opportunity.reason,
-                        feedback_usuario=feedback_input
-                    )
-                    high_value[selected_idx] = (proc, new_assets)
-                    assets = new_assets
-                st.rerun()
+            if st.button("🔄 Regenerar", use_container_width=True, key=f"{prefijo}_regenerar"):
+                with st.spinner("La IA está reescribiendo el borrador..."):
+                    nuevo = regenerar_pieza(activo, indicaciones, st.session_state.get("modo_simulado", False))
+                if nuevo:
+                    _guardar(activo, nuevo, "borrador")
+                    for k in _claves_widget(prefijo):  # los campos deben mostrar el texto nuevo
+                        if not k.endswith("_indicaciones"):
+                            del st.session_state[k]
+                    st.rerun()
+                else:
+                    st.error("No se pudo regenerar el borrador (revisa la cuota de la IA).")
 
-    # TABS MULTIFORMATO (REQUISITO HACKATHON)
-    tab_linkedin, tab_newsletter, tab_faq = st.tabs([
-        "📱 Publicación LinkedIn", 
-        "📰 Destaque Newsletter", 
-        "💡 FAQ / Mentoría"
-    ])
-
-    # 1. FORMATO LINKEDIN
-    with tab_linkedin:
-        if assets.post_linkedin:
-            post = assets.post_linkedin
-            approved, rejected, ed_title, ed_copy = render_linkedin_editor(
-                msg_id=proc.message_id,
-                author=proc.autor_anonimizado,
-                default_title=post.titulo,
-                default_copy=post.texto_copy
-            )
-
-            if approved:
-                st.session_state["approved_posts"][proc.message_id] = {
-                    "post_id": f"POST-{proc.message_id.replace('MSG-', '').replace('DISC-', '')}",
-                    "tipo": "LINKEDIN",
-                    "title": ed_title,
-                    "copy": ed_copy,
-                    "author": proc.autor_anonimizado,
-                    "origin_msg_id": proc.message_id,
-                    "score": proc.opportunity.opportunity_score,
-                    "status": "APPROVED_FOR_OCI"
-                }
-                st.toast(f"✅ Post para {proc.message_id} aprobado.", icon="🎉")
-
-            if rejected:
-                if proc.message_id in st.session_state["approved_posts"]:
-                    del st.session_state["approved_posts"][proc.message_id]
-                st.toast(f"🚫 Activo {proc.message_id} descartado.", icon="⚠️")
-        else:
-            st.info("No se generó borrador de LinkedIn para esta interacción.")
-
-    # 2. FORMATO NEWSLETTER
-    with tab_newsletter:
+    contenido = activo["contenido"]
+    if activo["formato"] == "post_linkedin":
+        aprobar, descartar, titulo, copy = render_linkedin_editor(
+            msg_id=prefijo, author=origen.get("autor") or "Miembro",
+            default_title=contenido["titulo"], default_copy=contenido["copy"])
+        tags = st.text_input("Hashtags", value=" ".join(contenido["hashtags"]), key=f"{prefijo}_hashtags")
+        editado = {"titulo": titulo, "copy": copy, "hashtags": [t for t in tags.split() if t]}
+    else:
         with st.container(border=True):
-            st.markdown("##### 📰 Destaque para el Boletín Semanal de la Comunidad")
-            titular_default = assets.destaque_newsletter_semanal.titular if assets.destaque_newsletter_semanal else f"Logro destacado: {proc.autor_anonimizado}"
-            resumen_default = assets.destaque_newsletter_semanal.resumen if assets.destaque_newsletter_semanal else proc.texto_limpio[:140]
-
-            news_titular = st.text_input("Titular de la Newsletter", value=titular_default, key=f"n_t_{proc.message_id}")
-            news_resumen = st.text_area("Cuerpo / Resumen Informativo", value=resumen_default, height=120, key=f"n_r_{proc.message_id}")
-            
+            if activo["formato"] == "destaque_newsletter":
+                st.markdown("##### 📰 Destaque para el boletín semanal")
+                seccion = st.text_input("Sección", value=contenido["seccion"], key=f"{prefijo}_seccion")
+                titular = st.text_input("Titular", value=contenido["titular"], key=f"{prefijo}_titular")
+                resumen = st.text_area("Resumen", value=contenido["resumen"], height=120, key=f"{prefijo}_resumen")
+                editado = {"seccion": seccion, "titular": titular, "resumen": resumen}
+            else:
+                st.markdown("##### 💡 Entrada para la base de preguntas frecuentes")
+                tema = st.text_input("Pregunta / tema", value=contenido["tema"], key=f"{prefijo}_tema")
+                cuerpo = st.text_area("Respuesta", value=contenido["cuerpo"], height=180, key=f"{prefijo}_cuerpo")
+                st.caption(f"Origen: {contenido.get('origen_descripcion', '')}")
+                editado = {"tema": tema, "cuerpo": cuerpo}
             c_a, c_b = st.columns(2)
-            if c_a.button("✅ Aprobar para Newsletter", key=f"btn_n_app_{proc.message_id}", type="primary", use_container_width=True):
-                st.session_state["approved_posts"][f"NEWS-{proc.message_id}"] = {
-                    "post_id": f"NEWS-{proc.message_id.replace('MSG-', '').replace('DISC-', '')}",
-                    "tipo": "NEWSLETTER",
-                    "title": news_titular,
-                    "copy": news_resumen,
-                    "author": proc.autor_anonimizado,
-                    "origin_msg_id": proc.message_id,
-                    "score": proc.opportunity.opportunity_score,
-                    "status": "APPROVED_FOR_OCI"
-                }
-                st.toast(f"✅ Newsletter para {proc.message_id} aprobada.", icon="📰")
+            aprobar = c_a.button("✅ Aprobar", key=f"{prefijo}_aprobar", type="primary", use_container_width=True)
+            descartar = c_b.button("🚫 Descartar", key=f"{prefijo}_descartar", use_container_width=True)
 
-    # 3. FORMATO FAQ / RECURSO EDUCATIVO
-    with tab_faq:
-        with st.container(border=True):
-            st.markdown("##### 💡 Base de Conocimiento y Guía de Mentoría")
-            tema_faq = f"Tip Rápido: Solución a duda recurrente en #{proc.channel}"
-            ed_faq_tema = st.text_input("Tema de la FAQ", value=tema_faq, key=f"faq_t_{proc.message_id}")
-            ed_faq_detalle = st.text_area("Pregunta Original / Caso Técnico", value=proc.texto_limpio, height=120, key=f"faq_d_{proc.message_id}")
-
-            if st.button("✅ Aprobar como FAQ Oficial", key=f"btn_faq_app_{proc.message_id}", type="primary", use_container_width=True):
-                st.session_state["approved_posts"][f"FAQ-{proc.message_id}"] = {
-                    "post_id": f"FAQ-{proc.message_id.replace('MSG-', '').replace('DISC-', '')}",
-                    "tipo": "FAQ_EDUCATIVA",
-                    "title": ed_faq_tema,
-                    "copy": ed_faq_detalle,
-                    "author": proc.autor_anonimizado,
-                    "origin_msg_id": proc.message_id,
-                    "score": proc.opportunity.opportunity_score,
-                    "status": "APPROVED_FOR_OCI"
-                }
-                st.toast(f"✅ FAQ para {proc.message_id} archivada.", icon="📚")
+    if aprobar:
+        _guardar(activo, editado, "aprobado")
+        st.toast(f"✅ {activo['activo_id']} aprobado.", icon="🎉")
+        st.rerun()
+    elif descartar:
+        _guardar(activo, editado, "descartado")
+        st.toast(f"🚫 {activo['activo_id']} descartado.", icon="⚠️")
+        st.rerun()
+    elif _editado(activo, editado):
+        # Las ediciones se guardan al momento: Streamlit olvida los campos al cambiar de borrador
+        volvio_a_revision = activo["estado_curaduria"] == "aprobado"
+        _guardar(activo, editado, "borrador" if volvio_a_revision else activo["estado_curaduria"])
+        if volvio_a_revision:
+            st.info("Editaste un activo aprobado: vuelve a borrador hasta que lo apruebes de nuevo.")

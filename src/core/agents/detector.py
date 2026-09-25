@@ -1,59 +1,50 @@
 """
 Agente 2: Opportunity Detector
-Calcula con precisión el Community Opportunity Score (0.00 a 1.00).
-Alineado con la especificación técnica de CommunityLab AI.
+Clasifica y puntúa cada mensaje con IA; las oportunidades se filtran por el umbral de su tipo.
 """
-from src.domain.schemas import OpportunityResult, OpportunityType, SemanticAnalysis
+from src import config
+from src.adapters.llm.proveedores import invocar_lotes
+from src.core.agents import simulado
+from src.core.agents.esquemas_llm import ClasificacionLote
+from src.core.estado import AgentState
+from src.core.prompts import PROMPT_DETECTOR
+from src.utils.texto import json_mensajes, lotes, texto_llm
+
+# Un mensaje que el modelo omite recibe esta clasificación explícita: nunca desaparece en silencio
+CLASIFICACION_NEUTRA = {"type": "OTRO", "score": 0.0,
+                        "reason": "sin clasificar (el modelo omitió este id); revisar manualmente"}
 
 
-def detect_opportunity(text: str, declared_type: str, analysis: SemanticAnalysis, metadata: dict) -> OpportunityResult:
-    reacciones = metadata.get("reacciones", 0)
-    respuestas = metadata.get("respuestas", 0)
-    text_lower = text.lower()
+def es_oportunidad(clasificacion: dict) -> bool:
+    umbral = config.UMBRALES_POR_TIPO.get(clasificacion["type"])
+    return umbral is not None and clasificacion["score"] >= umbral
 
-    # 1. Detección de Casos de Éxito / Contrataciones / Logros
-    palabras_exito = [
-        "primer trabajo", "quede seleccionad", "quedé seleccionad", 
-        "consegui trabajo", "conseguí trabajo", "nuevo trabajo",
-        "contratad", "contrato", "ascenso", "oferta laboral",
-        "ganamos", "certificaci", "100 estrellas"
-    ]
-    es_exito = declared_type in ["testimonio", "logro"] or any(p in text_lower for p in palabras_exito)
 
-    # 2. Detección de Dudas Técnicas / FAQ
-    palabras_faq = [
-        "como estructurar", "cómo estructurar", "ejemplo practico", "ejemplo práctico",
-        "duda", "error", "403", "401", "exception", "como configuro", "cómo configuro"
-    ]
-    es_faq = declared_type == "pregunta_tecnica" or any(p in text_lower for p in palabras_faq)
+def opportunity_detector(state: AgentState):
+    """Nodo 2 del grafo."""
+    clasificaciones = {}
+    oportunidades = []
+    campos = ["message_id", "texto", "canal", "reacciones", "respuestas", "sentiment", "topics", "intencion"]
+    bloques = list(lotes(state["mensajes_analizados"]))
+    resultados = [None] * len(bloques) if state.get("simulado") else invocar_lotes(
+        PROMPT_DETECTOR, ClasificacionLote, "analisis", 0,
+        [{"mensajes": json_mensajes(lote, campos)} for lote in bloques])
+    for lote, resultado in zip(bloques, resultados):
+        por_id = {c.message_id: c for c in (resultado.mensajes if resultado else [])}
+        for msg in lote:
+            if state.get("simulado"):
+                clasificaciones[msg["message_id"]] = simulado.clasificacion(msg)
+            else:
+                c = por_id.get(msg["message_id"])
+                clasificaciones[msg["message_id"]] = (
+                    {"type": c.type, "score": round(c.score, 2), "reason": texto_llm(c.reason)}
+                    if c else dict(CLASIFICACION_NEUTRA))
+            cl = clasificaciones[msg["message_id"]]
+            if es_oportunidad(cl):
+                oportunidades.append({**msg, **cl, "opportunity_id": f"OPP-{len(oportunidades) + 1:03d}"})
+    return {"clasificaciones": clasificaciones, "oportunidades": oportunidades}
 
-    # 3. Cálculo del Opportunity Score según la matriz de la especificación
-    if es_exito:
-        op_type = OpportunityType.SUCCESS_STORY
-        reason = "El usuario comparte un logro profesional o contratación laboral de alto impacto."
-        base_score = 0.92  # Rango Alta Prioridad (0.90 - 1.00)
 
-    elif es_faq and ("?" in text or "¿" in text or len(text) > 40):
-        op_type = OpportunityType.FAQ
-        reason = "Consulta técnica recurrente de la comunidad ideal para tutorial o tip rápido."
-        base_score = 0.78  # Rango Media Prioridad (0.70 - 0.89)
-
-    elif declared_type == "feedback":
-        op_type = OpportunityType.FEEDBACK
-        reason = "Retroalimentación sobre los cursos o mentorías."
-        base_score = 0.72
-
-    else:
-        op_type = OpportunityType.NONE
-        reason = "Mensaje casual o saludo sin relevancia para marketing."
-        base_score = 0.30  # Rango Baja Prioridad (0.00 - 0.69)
-
-    # Bonificación por engagement comunitario (reacciones en Discord)
-    engagement_bonus = min(0.08, (reacciones * 0.005) + (respuestas * 0.01))
-    final_score = round(min(1.0, base_score + engagement_bonus), 2)
-
-    return OpportunityResult(
-        type=op_type,
-        opportunity_score=final_score,
-        reason=reason
-    )
+def hay_oportunidades(state: AgentState) -> str:
+    """Arista condicional: ¿hay oportunidades que pasen el umbral?"""
+    return "generar_contenido" if state.get("oportunidades") else "solo_analitica"

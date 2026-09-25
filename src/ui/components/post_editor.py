@@ -1,6 +1,8 @@
 """
 CommunityLab AI - Human-in-the-Loop LinkedIn Post Editor
 """
+import html
+
 import streamlit as st
 
 
@@ -40,8 +42,8 @@ def render_linkedin_editor(msg_id: str, author: str, default_title: str, default
             <div style="font-size: 0.75rem; color: #64748B;">Comunidad Digital • Oracle Next Education & Alura</div>
         </div>
     </div>
-    <div class="linkedin-title-text">{edited_title}</div>
-    <div class="linkedin-body-text">{edited_copy}</div>
+    <div class="linkedin-title-text">{html.escape(edited_title)}</div>
+    <div class="linkedin-body-text">{html.escape(edited_copy).replace(chr(10), "<br>")}</div>
 </div>"""
         st.markdown(html_preview, unsafe_allow_html=True)
 

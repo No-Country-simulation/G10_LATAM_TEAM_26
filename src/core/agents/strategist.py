@@ -1,69 +1,145 @@
 """
-Agente 3: Content Strategist (Blindado contra fallos de parsing)
+Agente 3: Content Strategist
+Redacta un borrador por cada formato que corresponde al tipo de oportunidad, en lotes por formato.
 """
-import os
-import re
-from dotenv import load_dotenv
-from langchain_google_genai import ChatGoogleGenerativeAI
-from src.domain.schemas import GeneratedAssets, PostLinkedIn, DestaqueNewsletter, OpportunityType
-from src.utils.logger import setup_logger
+import json
+from collections import Counter
+from typing import Any, Dict, List, Optional
 
-load_dotenv()
+from src import config
+from src.adapters.llm.proveedores import invocar, invocar_lotes
+from src.core.agents import simulado
+from src.core.agents.esquemas_llm import Borrador, BorradorLote
+from src.core.estado import AgentState
+from src.core.prompts import PROMPTS_REDACCION, PROMPTS_REGENERACION
+from src.utils.logger import setup_logger
+from src.utils.texto import hashtags, lotes, pasos_en_lineas, texto_llm
+
 logger = setup_logger("content_strategist")
 
-COPYWRITER_SYSTEM_PROMPT = """Eres un Copywriter profesional para LinkedIn.
-Tu objetivo es redactar publicaciones inspiradoras y humanas sobre logros y preguntas técnicas de la comunidad.
-Mantén los textos directos, sin repeticiones de palabras y con 4 hashtags relevantes (#TalentosTech #OracleCloud #LangChain).
-"""
+FORMATOS_POR_TIPO = {
+    "SUCCESS_STORY": ["post_linkedin", "destaque_newsletter"],
+    "LOGRO": ["post_linkedin"],
+    "FAQ": ["sugerencia_faq"],
+}
+CANALES = {"post_linkedin": "LinkedIn Oficial"}
+PREFIJOS = {"post_linkedin": "POST", "destaque_newsletter": "NEWS", "sugerencia_faq": "FAQ"}
 
 
-def generate_content_assets(
-    clean_text: str, 
-    author: str, 
-    op_type: OpportunityType, 
-    reason: str,
-    feedback_usuario: str = ""
-) -> GeneratedAssets:
-    api_key = os.getenv("GEMINI_API_KEY", "").strip()
-    model_name = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip()
+def _origen(opp: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "message_id": opp["message_id"],
+        "opportunity_id": opp["opportunity_id"],
+        "channel": opp.get("canal"),
+        "autor": opp.get("autor"),
+        "message": opp["texto"],
+        "sentiment": opp["sentiment"],
+        "topics": opp["topics"],
+        "type": opp["type"],
+        "score": opp["score"],
+        "reason": opp["reason"],
+    }
 
-    if api_key and api_key != "tu_api_key_aqui":
-        try:
-            llm = ChatGoogleGenerativeAI(
-                model=model_name,
-                api_key=api_key,
-                max_output_tokens=800
-            )
-            structured_llm = llm.with_structured_output(GeneratedAssets)
-            instruccion = f"\nInstrucción editorial: {feedback_usuario}" if feedback_usuario else ""
-            prompt = f"Autor: {author}\nTipo: {op_type.value}\nMensaje original:\n\"{clean_text}\"{instruccion}"
 
-            resultado = structured_llm.invoke([("system", COPYWRITER_SYSTEM_PROMPT), ("human", prompt)])
-            if resultado and resultado.post_linkedin:
-                return resultado
-        except Exception as e:
-            logger.warning(f"Error generando assets con {model_name}: {str(e)[:120]}. Usando fallback.")
+def _contenido(formato: str, b: Borrador) -> Dict[str, Any]:
+    if formato == "post_linkedin":
+        return {
+            "titulo": texto_llm(b.titulo),
+            "copy": texto_llm(b.cuerpo),
+            "hashtags": hashtags(b.hashtags),
+            "canal_recomendado": CANALES[formato],
+            "potencial_engagement": b.potencial_engagement or "medio",
+        }
+    if formato == "destaque_newsletter":
+        return {"seccion": texto_llm(b.seccion) or "Logro de la Semana",
+                "titular": texto_llm(b.titulo), "resumen": texto_llm(b.cuerpo)}
+    return {"tema": texto_llm(b.titulo), "cuerpo": pasos_en_lineas(texto_llm(b.cuerpo)),
+            "origen_descripcion": texto_llm(b.origen_descripcion)}
 
-    # Fallback seguro contextual
-    hook = "¡De la comunidad al mercado laboral tech! 🚀"
-    if "cv" in clean_text.lower():
-        hook = "De no saber cómo armar el CV a su primer empleo como Dev 💼"
-    elif "contrat" in clean_text.lower() or "primer trabajo" in clean_text.lower():
-        hook = "Historias de éxito: Talento que transforma su carrera con IA y Cloud 🌟"
 
-    if feedback_usuario:
-        hook += f" • {feedback_usuario[:25]}"
+def _entrada_pieza(pieza: Dict[str, Any]) -> Dict[str, Any]:
+    opp = pieza["opp"]
+    return {"pieza_id": pieza["pieza_id"], "tipo": opp["type"], "canal": opp.get("canal"),
+            "mensaje": opp["texto"], "temas": opp["topics"]}
 
-    return GeneratedAssets(
-        post_linkedin=PostLinkedIn(
-            titulo=hook,
-            texto_copy=f"¡Orgullo absoluto en nuestra comunidad! 👏\n\n{author} compartió un logro inspirador:\n\"{clean_text}\"\n\nCuando combinas disciplina, proyectos reales y una comunidad activa, los resultados llegan.\n\n¡Felicitaciones {author}! A seguir creciendo. 💫\n\n#TalentosTech #OracleCloud #LangChain #CarreraDev #ComunidadONE",
-            canal_recomendado="LinkedIn Oficial",
-            potencial_engagement="Alto"
-        ),
-        destaque_newsletter_semanal=DestaqueNewsletter(
-            seccion="Historias de Éxito",
-            titular=f"{author} conquista su meta laboral en tech",
-            resumen=clean_text[:140] + "..."
-        )
-    )
+
+def planificar_piezas(oportunidades: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Una pieza por cada formato que corresponde al tipo de oportunidad, con su activo_id fijado de antemano
+    (así el id no depende del orden en que la IA termine cada lote)."""
+    piezas, contadores = [], Counter()
+    for opp in oportunidades:
+        for formato in FORMATOS_POR_TIPO.get(opp["type"], []):
+            contadores[formato] += 1
+            piezas.append({"pieza_id": f"{opp['opportunity_id']}:{formato}", "formato": formato, "opp": opp,
+                           "activo_id": f"{PREFIJOS[formato]}-{contadores[formato]:03d}", "orden": len(piezas)})
+    return piezas
+
+
+def lotes_de_piezas(piezas: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
+    """Lotes de un solo formato: cada llamada lleva solo el prompt de ese formato."""
+    return [lote for formato in PROMPTS_REDACCION
+            for lote in lotes([p for p in piezas if p["formato"] == formato], config.TAMANO_LOTE_CONTENIDO)]
+
+
+def _entrada_lote(lote: List[Dict[str, Any]]) -> Dict[str, str]:
+    return {"piezas": json.dumps([_entrada_pieza(p) for p in lote], ensure_ascii=False)}
+
+
+def redactar_lote(lote: List[Dict[str, Any]], modo_simulado: bool = False) -> Dict[str, Borrador]:
+    """Redacta un lote y devuelve los borradores por pieza_id (vacío si el lote falla)."""
+    if modo_simulado:
+        return {p["pieza_id"]: simulado.borrador(p["pieza_id"], p["opp"]["texto"]) for p in lote}
+    try:
+        r = invocar(PROMPTS_REDACCION[lote[0]["formato"]], BorradorLote, "redaccion", 0.4, _entrada_lote(lote))
+    except Exception as error:
+        logger.error(f"Un lote de redacción falló ({type(error).__name__}); se marca como pendiente")
+        return {}
+    return {b.pieza_id: b for b in (r.borradores if r else [])}
+
+
+def construir_activo(pieza: Dict[str, Any], borrador: Borrador) -> Dict[str, Any]:
+    return {
+        "activo_id": pieza["activo_id"],
+        "formato": pieza["formato"],
+        "estado_curaduria": "borrador",
+        "origen": _origen(pieza["opp"]),
+        "contenido": _contenido(pieza["formato"], borrador),
+    }
+
+
+def content_strategist(state: AgentState):
+    """Nodo 3 del grafo: redacta todas las piezas, con los lotes en paralelo."""
+    piezas = planificar_piezas(state["oportunidades"])
+    bloques = lotes_de_piezas(piezas)
+    if state.get("simulado"):
+        por_id = {pid: b for lote in bloques for pid, b in redactar_lote(lote, modo_simulado=True).items()}
+    else:
+        resultados = invocar_lotes([PROMPTS_REDACCION[lote[0]["formato"]] for lote in bloques], BorradorLote,
+                                   "redaccion", 0.4, [_entrada_lote(lote) for lote in bloques])
+        por_id = {b.pieza_id: b for r in resultados if r for b in r.borradores}
+    activos = [construir_activo(p, por_id[p["pieza_id"]]) for p in piezas if p["pieza_id"] in por_id]
+    pendientes = [p["pieza_id"] for p in piezas if p["pieza_id"] not in por_id]
+    if pendientes:
+        logger.warning(f"El modelo no devolvió {len(pendientes)} pieza(s): {pendientes}")
+    return {"activos_generados": activos, "piezas_pendientes": pendientes}
+
+
+def regenerar_pieza(activo: Dict[str, Any], indicaciones: str, modo_simulado: bool = False) -> Optional[Dict[str, Any]]:
+    """Reescribe un activo aplicando las indicaciones del curador. Devuelve el contenido nuevo o None."""
+    formato = activo["formato"]
+    pieza_id = activo["activo_id"]
+    if modo_simulado:
+        nuevo = simulado.borrador(pieza_id, activo["origen"]["message"])
+        nuevo.cuerpo = f"[SIMULADO — regenerado con: {indicaciones}]"
+        return _contenido(formato, nuevo)
+    try:
+        r = invocar(PROMPTS_REGENERACION[formato], BorradorLote, "redaccion", 0.4, {
+            "mensaje": activo["origen"]["message"],
+            "borrador": json.dumps(activo["contenido"], ensure_ascii=False),
+            "indicaciones": indicaciones or "mejora la redacción manteniendo las reglas",
+            "pieza_id": pieza_id,
+        })
+    except Exception as error:
+        logger.error(f"No se pudo regenerar {pieza_id}: {type(error).__name__}")
+        return None
+    return _contenido(formato, r.borradores[0]) if r and r.borradores else None
