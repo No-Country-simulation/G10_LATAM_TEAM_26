@@ -1,18 +1,66 @@
 """
-CommunityLab AI - Redacción en segundo plano
-Después de clasificar, redacta las piezas en un hilo aparte y las agrega al paquete a medida que cada
-lote termina, para que el panel muestre la clasificación sin esperar los textos.
+CommunityLab AI - Clasificación y redacción en segundo plano
+La clasificación corre en un hilo y publica los mensajes lote por lote, para que el panel los muestre apenas
+llegan. Después, la redacción corre en otro hilo y agrega las piezas al paquete a medida que cada lote termina.
 """
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Any, Dict
+from typing import Any, Callable, Dict, List, Optional
 
 from src import config
 from src.core.agents.strategist import construir_activo, lotes_de_piezas, planificar_piezas, redactar_lote
-from src.core.packager import avisos
+from src.core.packager import avisos, fila_p
 from src.utils.logger import setup_logger
 
 logger = setup_logger("generacion")
+
+
+class ClasificacionEnSegundoPlano:
+    """Estado observable de la clasificación: `parciales` crece (en Formato P) a medida que responde cada lote,
+    y `detalle` queda con el resultado completo de clasificar() al terminar."""
+
+    def __init__(self, clasificar: Callable[..., Dict[str, Any]], interacciones: List[Dict[str, Any]],
+                 metadatos: Optional[Dict[str, Any]], simulado: bool, total: int):
+        self._clasificar = clasificar
+        self._args = (interacciones, metadatos, simulado)
+        self.total = total
+        self.parciales: List[Dict[str, Any]] = []
+        self.detalle: Optional[Dict[str, Any]] = None
+        self.error: Optional[Exception] = None
+        self.terminado = False
+        self.segundos: Optional[float] = None
+        self._inicio = 0.0
+        self._bloqueo = threading.Lock()
+        self._hilo = threading.Thread(target=self._correr, name="clasificacion", daemon=True)
+
+    @property
+    def transcurrido(self) -> float:
+        return self.segundos if self.segundos is not None else time.perf_counter() - self._inicio
+
+    def iniciar(self) -> "ClasificacionEnSegundoPlano":
+        self._inicio = time.perf_counter()
+        self._hilo.start()
+        return self
+
+    def esperar(self, timeout: float | None = None) -> None:
+        if self._hilo.is_alive():
+            self._hilo.join(timeout)
+
+    def _al_avanzar(self, filas: list) -> None:
+        nuevas = [fila_p({**mensaje, **analisis}, clasificacion) for mensaje, analisis, clasificacion in filas]
+        with self._bloqueo:
+            self.parciales = self.parciales + nuevas  # lista nueva: el panel puede leer la anterior sin bloqueo
+
+    def _correr(self) -> None:
+        try:
+            self.detalle = self._clasificar(*self._args, al_avanzar=self._al_avanzar)
+        except Exception as error:
+            logger.error(f"La clasificación en segundo plano se detuvo ({type(error).__name__}: {error})")
+            self.error = error
+        finally:
+            self.segundos = time.perf_counter() - self._inicio
+            self.terminado = True
 
 
 class GeneracionEnSegundoPlano:

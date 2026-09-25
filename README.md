@@ -5,6 +5,7 @@
 Solución impulsada por IA que transforma las conversaciones no estructuradas de una comunidad digital (Discord, foros, chats) en activos de contenido listos para publicar: posts de LinkedIn, newsletters y FAQs educativas — con curaduría humana antes de cada publicación y almacenamiento trazable en Oracle Cloud Infrastructure.
 
 > 🏆 Proyecto desarrollado para la **Hackathon ONE G10** — Oracle Next Education & Alura.
+> *Track: MarTech & Community-Led Growth | Automatización con IA Generativa & Oracle Cloud Infrastructure (OCI)*
 
 ---
 
@@ -39,131 +40,56 @@ Las comunidades digitales activas generan cientos de interacciones diarias. Entr
 | Falta de trazabilidad | Imposible asociar un activo publicado con su conversación de origen | Mapeo relacional estricto: Contenido → Oportunidad → Mensaje original |
 
 ---
-# ⚡ CommunityLab AI — Motor Inteligente de Curaduría & Transformación
 
-> **Hackathon ONE G10 — Oracle Next Education & Alura**  
-> *Track: MarTech & Community-Led Growth | Automatización con IA Generativa & Oracle Cloud Infrastructure (OCI)*
 
----
+## 📌 Visión general
 
-## 📌 1. Visión General del Proyecto
-**CommunityLab AI** es una solución enterprise diseñada para automatizar la extracción, análisis y transformación de conversaciones no estructuradas de comunidades digitales (Discord) en activos de marketing multiformato (LinkedIn, Newsletters semanales y FAQs para mentorías).
+**CommunityLab AI** transforma las conversaciones de una comunidad digital en activos de marketing multiformato: posts de LinkedIn, destacados del newsletter semanal y FAQs para mentorías.
 
-El sistema incorpora un **filtro inteligente de priorización** (Community Opportunity Score $\ge 0.70$) para separar el 85% de ruido casual de las verdaderas oportunidades (contrataciones laborales, dudas técnicas críticas y feedback), garantizando control de calidad mediante un panel de curaduría humana (**Human-in-the-Loop**) antes de su persistencia estructurada y trazable hacia **OCI Object Storage** (capa Always Free).
+Un motor multiagente analiza el sentimiento y los temas de cada mensaje, detecta las oportunidades de contenido con un *Opportunity Score* y redacta borradores adaptados a cada canal. Nada se publica sin pasar por el panel de curaduría humana (**Human-in-the-Loop**), y cada paquete de activos queda persistido de forma trazable en **OCI Object Storage** (capa Always Free).
+
+Los contratos de datos entre módulos están definidos en [`spec.md`](spec.md).
 
 ---
-
-## 🏛️ 2. Arquitectura de Software por Capas (Clean Architecture)
-
-El proyecto sigue una arquitectura desacoplada para garantizar que la interfaz gráfica no conozca detalles de Discord, que los agentes de IA sean independientes de la presentación y que la nube pueda cambiarse sin romper el dominio:
-
-```text
-G10_LATAM_TEAM_26/
-├── data/
-│   ├── raw/                 # Capa Bronze: Capturas de Discord en bruto (.jsonl)
-│   ├── fixtures/            # Datos controlados para pruebas offline (Formato A)
-│   └── processed/           # Capa Gold: Paquetes consolidados listos para OCI
-├── src/
-│   ├── domain/              # Modelos de datos y contratos Pydantic (Single Source of Truth)
-│   │   └── schemas.py
-│   ├── utils/               # Helpers transversales: Sanitización PII y Logger JSON
-│   │   ├── sanitizer.py
-│   │   └── logger.py
-│   ├── adapters/            # Conectores externos (Infraestructura I/O)
-│   │   ├── ingestion/       # Bot de Discord en vivo y cargadores de lotes (JSON, CSV, export de Discord)
-│   │   │   ├── discord_bot.py
-│   │   │   └── loaders.py
-│   │   ├── llm/             # Proveedores de IA: reintentos, respaldo Gemini ↔ Groq y lotes en paralelo
-│   │   │   └── proveedores.py
-│   │   ├── cloud/           # Conector a OCI Object Storage (paquete completo, Formato B)
-│   │   │   └── oci_storage.py
-│   │   └── salidas.py       # Paquete JSON y cuadro CSV en salidas/ (uso por línea de comandos)
-│   ├── core/                # Motor LangGraph: analista → detector → [¿hay oportunidades?] → estratega → empaquetado
-│   │   ├── agents/          # Nodos del grafo y esquemas de salida de la IA
-│   │   │   ├── analyst.py
-│   │   │   ├── detector.py
-│   │   │   ├── strategist.py
-│   │   │   ├── esquemas_llm.py
-│   │   │   └── simulado.py  # Heurísticas sin IA para desarrollo y tests
-│   │   ├── prompts.py       # Prompts por agente y uno de redacción por formato
-│   │   ├── packager.py      # Formato B (paquete) y Formato P (análisis por mensaje)
-│   │   ├── estado.py
-│   │   └── orchestrator.py  # Grafo y API pública: procesar() / procesar_detalle()
-│   ├── config.py            # Modelos, umbrales, tamaños de lote y concurrencia (sobreescribibles por .env)
-│   ├── cli.py               # python -m src.cli lote.json [--simulado]
-│   └── ui/                  # Interfaz Streamlit con Design System moderno
-│       ├── styles.py        # Estilos CSS adaptables (Dark / Light)
-│       ├── components/      # Tarjetas KPI y previsualizador de LinkedIn
-│       └── views/           # Módulos: Overview, Scoring, Studio y OCI
-└── tests/                   # Pruebas unitarias con pytest (incluye el contrato del Formato B)
-```
 
 ## 🏗️ Arquitectura
 
-El sistema adopta una arquitectura por capas modulares que separa fuentes de entrada, inteligencia multiagente, interfaz de curaduría y almacenamiento cloud:
-
 ```mermaid
 flowchart TD
-    A["📥 FUENTES DE DATOS<br/>Discord Bot API (tiempo real) · JSON / CSV (lote)"] --> B
-    B["🧹 CAPA 1 · INGESTIÓN Y PREPROCESAMIENTO<br/>Normalización · Limpieza · Anonimización (PII) · Deduplicación"] --> C
-    C["🧠 CAPA 2 · ANÁLISIS LLM Y AGENTES ESPECIALIZADOS"] --> D
-    D["👁️ CAPA 3 · INTERFAZ Y CURADURÍA HUMANA<br/>Dashboard analítico Streamlit · Content Studio (Aprobar / Editar / Rechazar)"] --> E
-    E["☁️ CAPA 4 · ALMACENAMIENTO CLOUD<br/>OCI Object Storage — bucket trazable y persistente (Always Free)"]
-
-    subgraph C[" "]
-        C1["🔍 Agente 1<br/>Community Analyst<br/><i>sentimiento · tópicos · intención</i>"] --> C2["🎯 Agente 2<br/>Opportunity Detector<br/><i>clasificación + Opportunity Score</i>"]
-        C2 -->|"score ≥ 0.70"| C3["✍️ Agente 3<br/>Content Strategist<br/><i>borradores por canal y tono</i>"]
-    end
+    A["📥 FUENTES DE DATOS<br/>Discord (tiempo real) · JSON / CSV (lote)"] --> B
+    B["🧹 INGESTIÓN Y PREPROCESAMIENTO<br/>Normalización · Limpieza · Anonimización"] --> C
+    C["🧠 MOTOR MULTIAGENTE (LangGraph)<br/>Análisis · Detección de oportunidades · Redacción por canal"] --> D
+    D["👁️ CURADURÍA HUMANA<br/>Panel Streamlit: salud de la comunidad, revisión y aprobación"] --> E
+    E["☁️ ALMACENAMIENTO CLOUD<br/>OCI Object Storage (Always Free)"]
 ```
 
-### Arquitectura multiagente
+El proyecto sigue una arquitectura por capas: la interfaz no conoce los detalles de las fuentes, los agentes de IA son independientes de la presentación y la nube puede cambiarse sin romper el dominio.
 
-En lugar de una única consulta masiva al LLM, el razonamiento se divide en **tres agentes especializados en cadena**:
-
-| Agente | Entrada | Función | Salida |
-|---|---|---|---|
-| **Community Analyst** | Mensaje limpio | Extrae sentimiento, temas principales e intención | Metadata de análisis semántico |
-| **Opportunity Detector** | Mensaje + metadata | Clasifica el tipo de oportunidad y calcula el *Opportunity Score* | `SUCCESS_STORY` · `FAQ` · `TREND` · `FEEDBACK` · `MILESTONE` · `NONE` |
-| **Content Strategist** | Oportunidad + contexto original | Adapta el contenido al formato y tono del canal objetivo | Borradores para LinkedIn, Newsletter o FAQ educativa |
-
-### Algoritmo de priorización (Opportunity Score)
-
-Para filtrar el ruido y no saturar al equipo editorial, cada interacción recibe un **Community Opportunity Score** (0.00 – 1.00) que pondera relevancia, engagement, sentimiento y novedad:
-
-| Score | Clasificación | Acción automática |
-|---|---|---|
-| 0.90 – 1.00 | 🔴 Alta prioridad | Generación inmediata de activos multicanal (LinkedIn + Newsletter) y notificación en el panel |
-| 0.70 – 0.89 | 🟡 Media prioridad | Generación de borrador único específico (FAQ educativa o tip de comunidad) |
-| 0.00 – 0.69 | ⚪ Baja prioridad | Registro para analítica global; no genera borrador |
+```text
+G10_LATAM_TEAM_26/
+├── data/          # Fixtures de prueba, capturas y paquetes generados
+├── src/
+│   ├── domain/    # Contratos de datos (Pydantic)
+│   ├── adapters/  # Ingesta, proveedores de IA y almacenamiento en la nube
+│   ├── core/      # Motor multiagente (grafo LangGraph)
+│   ├── ui/        # Panel de curaduría (Streamlit)
+│   └── utils/     # Anonimización, texto y logs
+├── tests/         # Pruebas con pytest
+├── run_app.py     # Punto de entrada del panel
+└── spec.md        # Contratos de datos entre módulos
+```
 
 ---
 
-## 🔗 Modelo de datos y trazabilidad
+## ✨ Funcionalidades
 
-Todos los mensajes adoptan una estructura JSON unificada que garantiza trazabilidad total desde el activo publicado hasta la interacción original:
-
-```json
-{
-  "tracking": {
-    "message_id": "MSG-8921",
-    "source": "discord",
-    "channel": "logros",
-    "timestamp": "2026-09-17T15:30:00Z"
-  },
-  "analysis": {
-    "sentiment": "positive",
-    "topics": ["empleo", "data_analysis"],
-    "relevance_score": 0.95
-  },
-  "opportunity": {
-    "type": "SUCCESS_STORY",
-    "opportunity_score": 0.94,
-    "reason": "El usuario reporta su contratación exitosa como Data Analyst."
-  }
-}
-```
-
-**Esquema de lineage:** cada publicación aprobada conserva la referencia exacta del mensaje que la inspiró:
+- **Ingesta** por lote (JSON o CSV) o en tiempo real desde Discord, con anonimización de datos personales.
+- **Análisis con IA** de sentimiento, temas y tipo de cada mensaje.
+- **Detección de oportunidades** de contenido: historias de éxito, logros y dudas frecuentes.
+- **Generación de borradores** para LinkedIn, newsletter y FAQ, con el tono de cada canal.
+- **Salud de la comunidad:** sentimiento general, temas principales, tendencias y mensajes que necesitan apoyo.
+- **Curaduría:** editar, regenerar con indicaciones, aprobar o descartar cada borrador.
+- **Trazabilidad:** cada activo conserva la referencia al mensaje que lo originó.
 
 ```
 POST-034 (LinkedIn)  →  OPP-021 (Oportunidad)  →  MSG-8921 (#logros / Discord)
@@ -171,22 +97,16 @@ POST-034 (LinkedIn)  →  OPP-021 (Oportunidad)  →  MSG-8921 (#logros / Discor
 
 ---
 
-## ☁️ Estructura de almacenamiento en OCI
+## ☁️ Almacenamiento en OCI
 
-El almacenamiento utiliza **OCI Object Storage (capa Always Free)** con la siguiente organización dentro del bucket:
+Los paquetes de activos se guardan en **OCI Object Storage (capa Always Free)**, organizados por etapa y fecha:
 
 ```
 communitylab-bucket/
-├── raw/           # Mensajes en bruto recibidos (JSON/CSV)
-│   └── YYYY-MM-DD/
-├── processed/     # Mensajes limpios y analizados semánticamente
-│   └── YYYY-MM-DD/
-├── generated/     # Activos de contenido aprobados
-│   ├── linkedin/
-│   ├── newsletter/
-│   └── faq/
-└── reports/       # Reportes consolidados de salud comunitaria
-    └── YYYY-MM-DD/
+├── raw/YYYY-MM-DD/        # Datos tal como llegaron
+├── processed/YYYY-MM-DD/  # Datos limpios y analizados
+├── generated/YYYY-MM-DD/  # Paquetes de activos generados
+└── reports/YYYY-MM-DD/    # Reportes de salud comunitaria
 ```
 
 ---
@@ -196,18 +116,17 @@ communitylab-bucket/
 | Componente | Tecnología |
 |---|---|
 | Lenguaje | Python 3.11+ |
-| Modelo de lenguaje (LLM) | *Por definir: Google Gemini / OpenAI / Anthropic Claude* |
-| Orquestación de agentes | *Por definir: LangGraph / n8n* |
+| Modelos de lenguaje | Google Gemini y Groq |
+| Orquestación de agentes | LangGraph + LangChain |
 | Interfaz y curaduría | Streamlit |
 | Almacenamiento | OCI Object Storage (Always Free) |
 | Validación de datos | Pydantic |
-| Ingesta en tiempo real (diferencial) | Discord Bot API |
+| Ingesta en tiempo real | Discord Bot API |
+| Pruebas y despliegue local | pytest · Docker |
 
 ---
 
-## 🚀 Instalación y despliegue
-
-> ⚠️ Sección en construcción — se completará durante el desarrollo.
+## 🚀 Instalación y uso
 
 ```bash
 # 1. Clonar el repositorio
@@ -219,15 +138,24 @@ python -m venv .venv
 source .venv/bin/activate        # En Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-# 3. Configurar credenciales
+# 3. Configurar credenciales (API keys de IA y acceso al panel)
 cp .env.example .env
-# Editar .env con: API key del LLM + credenciales de OCI
 
-# 4. Ejecutar el pipeline sobre el dataset de ejemplo
-python -m pipeline.procesar data/ejemplo_interacciones.json
+# 4. Levantar el panel de curaduría (http://localhost:8501)
+streamlit run run_app.py
+```
 
-# 5. Levantar el panel de curaduría
-streamlit run app.py
+Otras formas de ejecutarlo:
+
+```bash
+# Procesar un lote por línea de comandos (--simulado funciona sin API keys)
+python -m src.cli data/fixtures/lote_ejemplo_formato_a.json --simulado
+
+# Panel con Docker (http://localhost:8510)
+docker compose up --build
+
+# Pruebas
+python -m pytest -q
 ```
 
 ---
@@ -236,26 +164,26 @@ streamlit run app.py
 
 **Caso 1 — Historia de éxito** · Origen: Discord `#logros`
 > *"¡Comunidad, logré mi primer trabajo como Data Analyst gracias al bootcamp!"*
-→ El sistema detecta alta relevancia y genera un post de LinkedIn con gancho, cuerpo, llamado a la acción y hashtags.
+→ Se detecta como historia de éxito y genera un post de LinkedIn y un destacado para el newsletter, sin datos personales.
 
 **Caso 2 — Pregunta recurrente (FAQ)** · Origen: Discord `#dudas-tecnicas`
 > *"¿Alguien sabe cómo configurar los reintentos automáticos en LangGraph?"*
-→ Se clasifica como consulta técnica de alto interés y genera una guía rápida / FAQ educativa.
+→ Se detecta como duda de interés general y genera una entrada de FAQ con tono didáctico.
 
 **Caso 3 — Tendencia de comunidad** · Origen: lote CSV, múltiples usuarios
-> Incremento inusual de consultas sobre la API de Oracle en 48 horas
-→ El sistema detecta el patrón y genera un resumen ejecutivo para los administradores.
+> Incremento de consultas sobre la API de Oracle en 48 horas
+→ El sistema detecta el patrón en la salud de la comunidad y lo resume para los administradores *(en desarrollo)*.
 
 ---
 
 ## 🗓️ Roadmap
 
-| Semana | Hito |
-|---|---|
-| 1 | Fundación: repositorio, dataset, formatos de datos, esqueleto end-to-end con bucket OCI activo |
-| 2 | Inteligencia: prompts estructurados, cadena de agentes, scoring — casos 1 y 2 funcionando |
-| 3 | Producto completo: panel Streamlit integrado con OCI, flujo de curaduría, diferenciales |
-| 4 | Validación: métricas de clasificación, video demo, presentación final |
+| Semana | Hito | Estado |
+|---|---|---|
+| 1 | Fundación: repositorio, dataset, formatos de datos y esqueleto end-to-end | ✅ Hecho |
+| 2 | Inteligencia: prompts, cadena de agentes y scoring — casos 1 y 2 funcionando | ✅ Hecho |
+| 3 | Producto completo: panel integrado con OCI, flujo de curaduría y diferenciales | 🟡 En curso |
+| 4 | Validación: métricas, video demo y presentación final | ⏳ Pendiente |
 
 ---
 

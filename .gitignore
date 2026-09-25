@@ -18,3 +18,4 @@ Thumbs.db
 
 # Salidas locales del motor (contienen textos de mensajes)
 salidas/
+data/cache/

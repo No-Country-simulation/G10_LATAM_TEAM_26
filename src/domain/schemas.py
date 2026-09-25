@@ -10,10 +10,11 @@ from pydantic import BaseModel, Field, model_validator
 
 class OpportunityType(str, Enum):
     SUCCESS_STORY = "SUCCESS_STORY"
-    LOGRO = "LOGRO"
+    MILESTONE = "MILESTONE"
     FAQ = "FAQ"
-    CONSULTA_OPERATIVA = "CONSULTA_OPERATIVA"
-    OTRO = "OTRO"
+    OPERATIONAL_QUERY = "OPERATIONAL_QUERY"
+    FEEDBACK = "FEEDBACK"
+    NONE = "NONE"
 
 
 # ─── FORMATO A: lote de interacciones ────────────────────────────────────────
@@ -89,6 +90,7 @@ class ResumenComunidad(BaseModel):
     temas_principales: List[str]
     oportunidades_detectadas: int
     consultas_operativas: int
+    feedback_recibido: int = 0
     tendencias_detectadas: List[Tendencia]
 
 
