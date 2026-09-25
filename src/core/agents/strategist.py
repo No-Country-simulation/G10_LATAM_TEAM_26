@@ -13,7 +13,7 @@ from src.core.agents.esquemas_llm import Borrador, BorradorLote
 from src.core.estado import AgentState
 from src.core.prompts import PROMPTS_REDACCION, PROMPTS_REGENERACION
 from src.utils.logger import setup_logger
-from src.utils.texto import hashtags, lotes, texto_llm
+from src.utils.texto import hashtags, lotes, pasos_en_lineas, texto_llm
 
 logger = setup_logger("content_strategist")
 
@@ -53,7 +53,7 @@ def _contenido(formato: str, b: Borrador) -> Dict[str, Any]:
     if formato == "destaque_newsletter":
         return {"seccion": texto_llm(b.seccion) or "Logro de la Semana",
                 "titular": texto_llm(b.titulo), "resumen": texto_llm(b.cuerpo)}
-    return {"tema": texto_llm(b.titulo), "cuerpo": texto_llm(b.cuerpo),
+    return {"tema": texto_llm(b.titulo), "cuerpo": pasos_en_lineas(texto_llm(b.cuerpo)),
             "origen_descripcion": texto_llm(b.origen_descripcion)}
 
 
