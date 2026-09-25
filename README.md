@@ -70,22 +70,33 @@ G10_LATAM_TEAM_26/
 │   │   ├── sanitizer.py
 │   │   └── logger.py
 │   ├── adapters/            # Conectores externos (Infraestructura I/O)
-│   │   ├── ingestion/       # Bot de Discord en vivo y cargadores de lotes
+│   │   ├── ingestion/       # Bot de Discord en vivo y cargadores de lotes (JSON, CSV, export de Discord)
 │   │   │   ├── discord_bot.py
 │   │   │   └── loaders.py
-│   │   └── cloud/           # Conector a OCI Object Storage
-│   │       └── oci_storage.py
-│   ├── core/                # Capa de Lógica de Negocio y Multiagente
-│   │   ├── agents/          # Agentes especializados (Batch Agent, Detector, Strategist)
-│   │   │   ├── batch_agent.py
+│   │   ├── llm/             # Proveedores de IA: reintentos, respaldo Gemini ↔ Groq y lotes en paralelo
+│   │   │   └── proveedores.py
+│   │   ├── cloud/           # Conector a OCI Object Storage (paquete completo, Formato B)
+│   │   │   └── oci_storage.py
+│   │   └── salidas.py       # Paquete JSON y cuadro CSV en salidas/ (uso por línea de comandos)
+│   ├── core/                # Motor LangGraph: analista → detector → [¿hay oportunidades?] → estratega → empaquetado
+│   │   ├── agents/          # Nodos del grafo y esquemas de salida de la IA
+│   │   │   ├── analyst.py
 │   │   │   ├── detector.py
-│   │   │   └── strategist.py
-│   │   └── orchestrator.py  # Orquestador del pipeline y filtrado condicional
+│   │   │   ├── strategist.py
+│   │   │   ├── esquemas_llm.py
+│   │   │   └── simulado.py  # Heurísticas sin IA para desarrollo y tests
+│   │   ├── prompts.py       # Prompts por agente y uno de redacción por formato
+│   │   ├── packager.py      # Formato B (paquete) y Formato P (análisis por mensaje)
+│   │   ├── estado.py
+│   │   └── orchestrator.py  # Grafo y API pública: procesar() / procesar_detalle()
+│   ├── config.py            # Modelos, umbrales, tamaños de lote y concurrencia (sobreescribibles por .env)
+│   ├── cli.py               # python -m src.cli lote.json [--simulado]
 │   └── ui/                  # Interfaz Streamlit con Design System moderno
 │       ├── styles.py        # Estilos CSS adaptables (Dark / Light)
 │       ├── components/      # Tarjetas KPI y previsualizador de LinkedIn
 │       └── views/           # Módulos: Overview, Scoring, Studio y OCI
-└── tests/                   # Pruebas unitarias automatizadas con pytest
+└── tests/                   # Pruebas unitarias con pytest (incluye el contrato del Formato B)
+```
 
 ## 🏗️ Arquitectura
 

@@ -1,29 +1,22 @@
 """
 CommunityLab AI - Domain Schemas (Pydantic Contracts)
-Define todos los modelos de datos para validación estricta y trazabilidad.
+Contratos de spec.md: Formato A (lote de entrada) y Formato B (paquete de distribución).
 """
 
-from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
+from typing import Any, Dict, List, Literal, Optional
+from pydantic import BaseModel, Field, model_validator
 
 
 class OpportunityType(str, Enum):
     SUCCESS_STORY = "SUCCESS_STORY"
+    LOGRO = "LOGRO"
     FAQ = "FAQ"
-    TREND = "TREND"
-    FEEDBACK = "FEEDBACK"
-    MILESTONE = "MILESTONE"
-    NONE = "NONE"
+    CONSULTA_OPERATIVA = "CONSULTA_OPERATIVA"
+    OTRO = "OTRO"
 
 
-class SentimentType(str, Enum):
-    POSITIVE = "positive"
-    NEUTRAL = "neutral"
-    NEGATIVE = "negative"
-    HIGHLY_POSITIVE = "Altamente Positivo"
-
+# ─── FORMATO A: lote de interacciones ────────────────────────────────────────
 
 class RawMessageInteraction(BaseModel):
     """Estructura de cada interacción dentro del lote recibido."""
@@ -32,7 +25,7 @@ class RawMessageInteraction(BaseModel):
     channel: str
     timestamp: str
     autor: str
-    tipo_declarado: str
+    tipo_declarado: Optional[str] = None
     texto: str
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
@@ -46,65 +39,72 @@ class BatchInputPayload(BaseModel):
     interacciones: List[RawMessageInteraction]
 
 
-class SemanticAnalysis(BaseModel):
-    """Salida del Agente 1: Community Analyst."""
-    sentiment: str
+# ─── FORMATO B: paquete de activos de distribución ───────────────────────────
+
+CAMPOS_POR_FORMATO = {
+    "post_linkedin": {"titulo", "copy", "hashtags", "canal_recomendado", "potencial_engagement"},
+    "destaque_newsletter": {"seccion", "titular", "resumen"},
+    "sugerencia_faq": {"tema", "cuerpo", "origen_descripcion"},
+}
+
+
+class OrigenActivo(BaseModel):
+    message_id: str
+    opportunity_id: str
+    channel: Optional[str] = None
+    autor: Optional[str] = None
+    message: str
+    sentiment: Literal["positive", "neutral", "negative"]
     topics: List[str]
-    relevance_score: float = Field(..., ge=0.0, le=1.0)
-    intent: Optional[str] = None
-
-
-class OpportunityResult(BaseModel):
-    """Salida del Agente 2: Opportunity Detector."""
     type: OpportunityType
-    opportunity_score: float = Field(..., ge=0.0, le=1.0)
+    score: float = Field(ge=0.0, le=1.0)
     reason: str
 
 
-class ProcessedMessage(BaseModel):
-    """Mensaje enriquecido tras el paso de los agentes."""
-    message_id: str
-    channel: str
-    autor_anonimizado: str
-    texto_limpio: str
-    analysis: SemanticAnalysis
-    opportunity: OpportunityResult
+class Activo(BaseModel):
+    activo_id: str
+    formato: Literal["post_linkedin", "destaque_newsletter", "sugerencia_faq"]
+    estado_curaduria: Literal["borrador", "aprobado", "publicado", "descartado"]
+    origen: OrigenActivo
+    contenido: Dict[str, Any]
+
+    @model_validator(mode="after")
+    def _contenido_segun_formato(self):
+        faltan = CAMPOS_POR_FORMATO[self.formato] - self.contenido.keys()
+        if faltan:
+            raise ValueError(f"{self.activo_id}: al contenido de {self.formato} le faltan {sorted(faltan)}")
+        return self
 
 
-# ─── ACTIVOS DE DISTRIBUCIÓN (Agente 3: Content Strategist) ─────────────────
-
-class PostLinkedIn(BaseModel):
-    titulo: str
-    texto_copy: str = Field(..., alias="copy", serialization_alias="copy")
-    canal_recomendado: str = "LinkedIn Oficial"
-    potencial_engagement: str = "Alto"
-
-    model_config = {
-        "populate_by_name": True  # Permite acceder tanto por .texto_copy como por .copy
-    }
-
-
-class DestaqueNewsletter(BaseModel):
-    seccion: str
-    titular: str
-    resumen: str
-
-
-class SugerenciaFAQ(BaseModel):
+class Tendencia(BaseModel):
     tema: str
-    origen: str
-    status: str = "derivado_a_mentoria"
+    menciones: int
+    descripcion: str
 
 
-class GeneratedAssets(BaseModel):
-    post_linkedin: Optional[PostLinkedIn] = None
-    destaque_newsletter_semanal: Optional[DestaqueNewsletter] = None
-    sugerencia_contenido_faq: Optional[SugerenciaFAQ] = None
+class ResumenComunidad(BaseModel):
+    total_interacciones_procesadas: int
+    sentimiento_predominante: Optional[str] = None
+    distribucion_sentimiento: Dict[str, int]
+    temas_principales: List[str]
+    oportunidades_detectadas: int
+    consultas_operativas: int
+    tendencias_detectadas: List[Tendencia]
 
 
-class FinalBatchOutput(BaseModel):
-    """Formato de salida estructurada exigido por el PDF de la Hackathon."""
-    status: str = "exito"
-    resumen_comunidad: Dict[str, Any]
-    activos_distribucion_generados: GeneratedAssets
-    almacenamiento_oci: Optional[Dict[str, str]] = None
+class AlmacenamientoOCI(BaseModel):
+    bucket: str
+    ruta_objeto: str
+    status: str
+
+
+class PaqueteDistribucion(BaseModel):
+    formato_version: Literal["1.0"]
+    status: Literal["exito", "parcial", "error"]
+    paquete_id: str
+    origen_comunidad: str
+    periodo_referencia: str
+    fecha_generacion: str
+    resumen_comunidad: ResumenComunidad
+    activos: List[Activo]
+    almacenamiento_oci: AlmacenamientoOCI

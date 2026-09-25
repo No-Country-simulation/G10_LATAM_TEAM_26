@@ -5,18 +5,20 @@ antes de que la información sea procesada por el LLM o mostrada en el panel.
 """
 import re
 
+_EMAIL = re.compile(r"[\w.-]+@[\w.-]+\.\w+")
+_MENCION = re.compile(r"<@!?\d+>")
+# Exige 6+ dígitos para no enmascarar años, cifras o duraciones ("2026", "20 minutos")
+_TELEFONO = re.compile(r"(?<![\w+])(?:\+\d{1,3}[\s.-]?)?(?:\(?\d{2,4}\)?[\s.-]?)?\d{3}[\s.-]?\d{3,4}(?!\w)")
+
 
 def anonimizar_texto(texto: str) -> str:
-    """Elimina correos electrónicos, teléfonos, menciones de Discord y URLs sensibles."""
+    """Enmascara correos, menciones de Discord y teléfonos."""
     if not texto:
         return ""
-    # Enmascarar correos electrónicos
-    texto = re.sub(r'[\w\.-]+@[\w\.-]+\.\w+', '[EMAIL_PROTEGIDO]', texto)
-    # Enmascarar números de teléfono habituales
-    texto = re.sub(r'\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}', '[TELEFONO_PROTEGIDO]', texto)
-    # Enmascarar menciones internas de Discord tipo <@!123456789>
-    texto = re.sub(r'<@!?\d+>', '@miembro', texto)
-    return texto
+    texto = _EMAIL.sub("[EMAIL_PROTEGIDO]", texto)
+    # Las menciones van antes que los teléfonos: sus IDs numéricos parecen teléfonos
+    texto = _MENCION.sub("@miembro", texto)
+    return _TELEFONO.sub("[TELEFONO_PROTEGIDO]", texto)
 
 
 def anonimizar_autor(autor: str) -> str:

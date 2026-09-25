@@ -15,3 +15,6 @@ data/raw/
 .idea/
 Thumbs.db
 .DS_Store
+
+# Salidas locales del motor (contienen textos de mensajes)
+salidas/

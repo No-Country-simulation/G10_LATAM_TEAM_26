@@ -63,10 +63,6 @@ def main():
 
     if "current_nav" not in st.session_state:
         st.session_state["current_nav"] = "overview"
-    if "processed_results" not in st.session_state:
-        st.session_state["processed_results"] = []
-    if "approved_posts" not in st.session_state:
-        st.session_state["approved_posts"] = {}
 
     with st.sidebar:
         st.markdown("""
