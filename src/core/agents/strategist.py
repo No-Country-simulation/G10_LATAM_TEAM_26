@@ -4,7 +4,7 @@ Redacta un borrador por cada formato que corresponde al tipo de oportunidad, en 
 """
 import json
 from collections import Counter
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from src import config
 from src.adapters.llm.proveedores import invocar, invocar_lotes
@@ -63,39 +63,62 @@ def _entrada_pieza(pieza: Dict[str, Any]) -> Dict[str, Any]:
             "mensaje": opp["texto"], "temas": opp["topics"]}
 
 
+def planificar_piezas(oportunidades: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Una pieza por cada formato que corresponde al tipo de oportunidad, con su activo_id fijado de antemano
+    (así el id no depende del orden en que la IA termine cada lote)."""
+    piezas, contadores = [], Counter()
+    for opp in oportunidades:
+        for formato in FORMATOS_POR_TIPO.get(opp["type"], []):
+            contadores[formato] += 1
+            piezas.append({"pieza_id": f"{opp['opportunity_id']}:{formato}", "formato": formato, "opp": opp,
+                           "activo_id": f"{PREFIJOS[formato]}-{contadores[formato]:03d}", "orden": len(piezas)})
+    return piezas
+
+
+def lotes_de_piezas(piezas: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
+    """Lotes de un solo formato: cada llamada lleva solo el prompt de ese formato."""
+    return [lote for formato in PROMPTS_REDACCION
+            for lote in lotes([p for p in piezas if p["formato"] == formato], config.TAMANO_LOTE_CONTENIDO)]
+
+
+def _entrada_lote(lote: List[Dict[str, Any]]) -> Dict[str, str]:
+    return {"piezas": json.dumps([_entrada_pieza(p) for p in lote], ensure_ascii=False)}
+
+
+def redactar_lote(lote: List[Dict[str, Any]], modo_simulado: bool = False) -> Dict[str, Borrador]:
+    """Redacta un lote y devuelve los borradores por pieza_id (vacío si el lote falla)."""
+    if modo_simulado:
+        return {p["pieza_id"]: simulado.borrador(p["pieza_id"], p["opp"]["texto"]) for p in lote}
+    try:
+        r = invocar(PROMPTS_REDACCION[lote[0]["formato"]], BorradorLote, "redaccion", 0.4, _entrada_lote(lote))
+    except Exception as error:
+        logger.error(f"Un lote de redacción falló ({type(error).__name__}); se marca como pendiente")
+        return {}
+    return {b.pieza_id: b for b in (r.borradores if r else [])}
+
+
+def construir_activo(pieza: Dict[str, Any], borrador: Borrador) -> Dict[str, Any]:
+    return {
+        "activo_id": pieza["activo_id"],
+        "formato": pieza["formato"],
+        "estado_curaduria": "borrador",
+        "origen": _origen(pieza["opp"]),
+        "contenido": _contenido(pieza["formato"], borrador),
+    }
+
+
 def content_strategist(state: AgentState):
-    """Nodo 3 del grafo. Cada llamada lleva solo el prompt del formato de su lote."""
-    piezas = [
-        {"pieza_id": f"{opp['opportunity_id']}:{formato}", "formato": formato, "opp": opp}
-        for opp in state["oportunidades"]
-        for formato in FORMATOS_POR_TIPO.get(opp["type"], [])
-    ]
-    bloques = [lote for formato in PROMPTS_REDACCION
-               for lote in lotes([p for p in piezas if p["formato"] == formato], config.TAMANO_LOTE_CONTENIDO)]
+    """Nodo 3 del grafo: redacta todas las piezas, con los lotes en paralelo."""
+    piezas = planificar_piezas(state["oportunidades"])
+    bloques = lotes_de_piezas(piezas)
     if state.get("simulado"):
-        resultados = [BorradorLote(borradores=[simulado.borrador(p["pieza_id"], p["opp"]["texto"]) for p in lote])
-                      for lote in bloques]
+        por_id = {pid: b for lote in bloques for pid, b in redactar_lote(lote, modo_simulado=True).items()}
     else:
-        resultados = invocar_lotes(
-            [PROMPTS_REDACCION[lote[0]["formato"]] for lote in bloques], BorradorLote, "redaccion", 0.4,
-            [{"piezas": json.dumps([_entrada_pieza(p) for p in lote], ensure_ascii=False)} for lote in bloques])
-    por_id = {b.pieza_id: b for r in resultados if r for b in r.borradores}
-    contadores = Counter()
-    activos, pendientes = [], []
-    for pieza in piezas:  # orden original: por oportunidad
-        borrador = por_id.get(pieza["pieza_id"])
-        if not borrador:
-            pendientes.append(pieza["pieza_id"])
-            continue
-        formato = pieza["formato"]
-        contadores[formato] += 1
-        activos.append({
-            "activo_id": f"{PREFIJOS[formato]}-{contadores[formato]:03d}",
-            "formato": formato,
-            "estado_curaduria": "borrador",
-            "origen": _origen(pieza["opp"]),
-            "contenido": _contenido(formato, borrador),
-        })
+        resultados = invocar_lotes([PROMPTS_REDACCION[lote[0]["formato"]] for lote in bloques], BorradorLote,
+                                   "redaccion", 0.4, [_entrada_lote(lote) for lote in bloques])
+        por_id = {b.pieza_id: b for r in resultados if r for b in r.borradores}
+    activos = [construir_activo(p, por_id[p["pieza_id"]]) for p in piezas if p["pieza_id"] in por_id]
+    pendientes = [p["pieza_id"] for p in piezas if p["pieza_id"] not in por_id]
     if pendientes:
         logger.warning(f"El modelo no devolvió {len(pendientes)} pieza(s): {pendientes}")
     return {"activos_generados": activos, "piezas_pendientes": pendientes}

@@ -8,7 +8,7 @@ import streamlit as st
 
 from src import config
 from src.adapters.ingestion.loaders import interacciones_desde_payload
-from src.core.orchestrator import procesar_detalle
+from src.core.orchestrator import clasificar, generar_contenido
 from src.domain.schemas import BatchInputPayload
 from src.ui.components.cards import render_interaction_card, render_kpi_card
 
@@ -16,6 +16,29 @@ from src.ui.components.cards import render_interaction_card, render_kpi_card
 def _es_oportunidad(p: dict) -> bool:
     umbral = config.UMBRALES_POR_TIPO.get(p["opportunity"]["type"])
     return umbral is not None and p["opportunity"]["opportunity_score"] >= umbral
+
+
+@st.fragment(run_every=2)
+def progreso_redaccion():
+    """Se refresca solo mientras los borradores se redactan en segundo plano."""
+    generacion = st.session_state.get("generacion")
+    if not generacion:
+        return
+    listos, total = len(generacion.activos), generacion.total_piezas
+    clasif = st.session_state.get("segundos_clasificacion", 0)
+    if not generacion.terminado:
+        st.progress(generacion.lotes_listos / max(len(generacion.lotes), 1),
+                    text=f"✍️ Clasificación lista en {clasif:.1f} s. Redactando borradores en segundo plano: "
+                         f"{listos} de {total} listos (ya puedes revisarlos en Content Studio).")
+        return
+    if not st.session_state.get("redaccion_notificada"):
+        st.session_state["segundos_redaccion"] = time.perf_counter() - st.session_state["inicio_redaccion"]
+        st.session_state["avisos"]["piezas_pendientes"] = list(generacion.pendientes)
+        st.session_state["redaccion_notificada"] = True
+        st.rerun(scope="app")  # actualiza métricas y avisos con el resultado final
+    simulado = " (modo simulado)" if st.session_state.get("modo_simulado") else ""
+    st.success(f"Clasificación en {clasif:.1f} s y {listos} de {total} borradores redactados en "
+               f"{st.session_state.get('segundos_redaccion', 0):.1f} s más{simulado}.")
 
 
 def render_explorer_view(dataset: BatchInputPayload | None):
@@ -43,23 +66,25 @@ def render_explorer_view(dataset: BatchInputPayload | None):
 
     if iniciar:
         interacciones, metadatos = interacciones_desde_payload(dataset, int(cantidad))
-        with st.spinner(f"Procesando {cantidad} mensajes..."):
+        with st.spinner(f"Clasificando {cantidad} mensajes..."):
             inicio = time.perf_counter()
-            detalle = procesar_detalle(interacciones, metadatos, simulado=simulado)
-            segundos = time.perf_counter() - inicio
+            detalle = clasificar(interacciones, metadatos, simulado=simulado)
+            st.session_state["segundos_clasificacion"] = time.perf_counter() - inicio
         st.session_state["paquete"] = detalle["paquete"]
         st.session_state["procesados"] = detalle["procesados"]
         st.session_state["avisos"] = detalle["avisos"]
         st.session_state["modo_simulado"] = simulado
         st.session_state["textos_lote"] = {m["message_id"]: m for m in interacciones}
+        st.session_state["inicio_redaccion"] = time.perf_counter()
+        st.session_state["generacion"] = generar_contenido(detalle, simulado=simulado)
+        st.session_state.pop("redaccion_notificada", None)
         st.session_state.pop("oci_result", None)
-        st.success(f"Lote de {cantidad} mensajes procesado en {segundos:.1f} s"
-                   f"{' (modo simulado)' if simulado else ''}.")
 
     paquete = st.session_state.get("paquete")
     if not paquete:
         return
 
+    progreso_redaccion()
     avisos = st.session_state.get("avisos", {})
     pendientes = sum(len(v) for v in avisos.values())
     if pendientes:

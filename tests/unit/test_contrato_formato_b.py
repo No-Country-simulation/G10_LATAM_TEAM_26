@@ -5,7 +5,7 @@ El paquete que produce procesar() cumple el Formato B de spec.md (modo simulado:
 import pytest
 
 from src.adapters.ingestion.loaders import interacciones_desde_payload, load_fixture_data
-from src.core.orchestrator import procesar, procesar_detalle
+from src.core.orchestrator import clasificar, generar_contenido, procesar, procesar_detalle
 from src.domain.schemas import PaqueteDistribucion
 
 
@@ -40,6 +40,21 @@ def test_formato_p_trae_un_elemento_por_mensaje(lote, detalle):
 def test_simulado_sin_avisos(detalle):
     assert detalle["paquete"]["status"] == "exito"
     assert not any(detalle["avisos"].values())
+
+
+def test_por_fases_termina_con_el_mismo_paquete(lote):
+    interacciones, metadatos = lote
+    completo = procesar(interacciones, metadatos, simulado=True)
+    detalle = clasificar(interacciones, metadatos, simulado=True)
+    assert detalle["paquete"]["activos"] == []
+    assert detalle["paquete"]["resumen_comunidad"] == completo["resumen_comunidad"]
+
+    generacion = generar_contenido(detalle, simulado=True)
+    generacion.esperar(timeout=30)
+    assert generacion.terminado
+    assert detalle["paquete"]["activos"] == completo["activos"]
+    assert detalle["paquete"]["status"] == "exito"
+    PaqueteDistribucion.model_validate(detalle["paquete"])
 
 
 def test_mensajes_vacios_se_descartan():

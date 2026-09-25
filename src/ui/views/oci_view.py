@@ -45,7 +45,12 @@ def render_oci_view(dataset: BatchInputPayload | None):
             st.caption("Hoy se guarda en data/processed/ con la misma ruta; la subida al bucket real se conecta "
                        "en el adaptador de OCI sin cambiar esta vista.")
 
-            if st.button("🚀 Guardar paquete", type="primary", use_container_width=True):
+            generacion = st.session_state.get("generacion")
+            redactando = generacion is not None and not generacion.terminado
+            if redactando:
+                st.warning(f"Todavía se están redactando borradores ({len(generacion.activos)} de "
+                           f"{generacion.total_piezas}). Espera a que termine para guardar el paquete completo.")
+            if st.button("🚀 Guardar paquete", type="primary", use_container_width=True, disabled=redactando):
                 resultado = ObjectStorageAdapter().persist_distribution_package(paquete)
                 paquete["almacenamiento_oci"]["status"] = resultado["status"]
                 st.session_state["oci_result"] = resultado

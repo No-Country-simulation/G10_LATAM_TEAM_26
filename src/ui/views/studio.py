@@ -25,25 +25,53 @@ def _editado(activo: dict, contenido: dict) -> bool:
     return any(activo["contenido"].get(k) != v for k, v in contenido.items())
 
 
+@st.fragment(run_every=2)
+def progreso_studio(mostrados: int):
+    """Avisa cuántos borradores llegaron desde el último dibujo, sin recargar lo que el curador edita."""
+    generacion = st.session_state.get("generacion")
+    if not generacion:
+        return
+    listos = len(generacion.activos)
+    if mostrados == 0 and listos > 0:
+        st.rerun(scope="app")  # todavía no hay nada que editar: se puede mostrar la lista de inmediato
+    texto = f"✍️ Redactando borradores: {listos} de {generacion.total_piezas} listos."
+    if generacion.terminado:
+        texto = f"✅ Redacción terminada: {listos} de {generacion.total_piezas} borradores."
+    c_texto, c_boton = st.columns([3, 1])
+    c_texto.info(texto)
+    nuevos = listos - mostrados
+    if nuevos > 0 and c_boton.button(f"🔄 Mostrar {nuevos} nuevos", use_container_width=True):
+        st.rerun(scope="app")
+
+
 def render_studio_view():
     st.markdown('<div class="saas-title">Content Studio — Human-in-the-Loop</div>', unsafe_allow_html=True)
     st.markdown('<div class="saas-subtitle">Supervisión, ajuste editorial multiformato y aprobación previa a OCI.</div>',
                 unsafe_allow_html=True)
 
     paquete = st.session_state.get("paquete")
-    if not paquete or not paquete["activos"]:
-        st.warning("No hay borradores listos. Ve a 'Detección & Scoring' y ejecuta el análisis primero.")
+    generacion = st.session_state.get("generacion")
+    # Copia de la lista: el hilo de redacción puede agregar borradores mientras se dibuja la página
+    activos = list(paquete["activos"]) if paquete else []
+    if generacion and not generacion.terminado:
+        progreso_studio(len(activos))
+    if not activos:
+        if generacion and not generacion.terminado:
+            st.info("Los primeros borradores aparecerán aquí en unos segundos.")
+        else:
+            st.warning("No hay borradores listos. Ve a 'Detección & Scoring' y ejecuta el análisis primero.")
         return
 
-    activos = paquete["activos"]
     conteo = {e: sum(1 for a in activos if a["estado_curaduria"] == e) for e in ("borrador", "aprobado", "descartado")}
     st.success(f"**{len(activos)}** borradores en el paquete · 📝 {conteo['borrador']} por revisar · "
                f"✅ {conteo['aprobado']} aprobados · 🚫 {conteo['descartado']} descartados")
 
-    opciones = [f"{ICONOS_ESTADO[a['estado_curaduria']]} {a['activo_id']} · {ETIQUETAS[a['formato']]} · "
-                f"{a['origen']['type']} {a['origen']['score']:.2f}" for a in activos]
-    indice = st.selectbox("Selecciona un borrador para revisar:", range(len(opciones)), format_func=lambda i: opciones[i])
-    activo = activos[indice]
+    por_id = {a["activo_id"]: a for a in activos}
+    elegido = st.selectbox(
+        "Selecciona un borrador para revisar:", list(por_id),
+        format_func=lambda i: f"{ICONOS_ESTADO[por_id[i]['estado_curaduria']]} {i} · {ETIQUETAS[por_id[i]['formato']]} · "
+                              f"{por_id[i]['origen']['type']} {por_id[i]['origen']['score']:.2f}")
+    activo = por_id[elegido]
     origen = activo["origen"]
     prefijo = f"{paquete['paquete_id']}_{activo['activo_id']}"
 

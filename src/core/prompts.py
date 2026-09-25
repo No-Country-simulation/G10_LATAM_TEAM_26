@@ -48,6 +48,7 @@ REGLAS_REDACCION = (
     "'una persona de la comunidad', 'quien' o 'alguien de la comunidad', y evita participios con género "
     "('fue contratado/a', 'fue ascendido/a', 'seleccionada'); usa formas neutras como 'consiguió el puesto' o "
     "'recibió un ascenso'. Los roles u oficios cítalos tal como el autor los escribió.\n"
+    "Tutea al lector (nunca voseo) y no uses mayúsculas para enfatizar.\n"
     "Devuelve un borrador por cada pieza recibida, con el mismo pieza_id.\n\n"
 )
 
