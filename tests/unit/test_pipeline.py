@@ -2,6 +2,7 @@
 CommunityLab AI - Unit Tests
 Anonimización de PII y reglas de oportunidad (sin llamadas a la IA).
 """
+from src.core.agents import simulado
 from src.core.agents.detector import es_oportunidad
 from src.utils.sanitizer import anonimizar_autor, anonimizar_texto
 from src.utils.texto import hashtags, pasos_en_lineas
@@ -36,8 +37,8 @@ def test_umbral_por_tipo():
     assert es_oportunidad({"type": "SUCCESS_STORY", "score": 0.8})
     assert not es_oportunidad({"type": "SUCCESS_STORY", "score": 0.79})
     assert es_oportunidad({"type": "FAQ", "score": 0.7})
-    assert not es_oportunidad({"type": "CONSULTA_OPERATIVA", "score": 0.95})
-    assert not es_oportunidad({"type": "OTRO", "score": 1.0})
+    assert not es_oportunidad({"type": "OPERATIONAL_QUERY", "score": 0.95})
+    assert not es_oportunidad({"type": "NONE", "score": 1.0})
 
 
 def test_hashtags_pegados_se_separan():
@@ -50,3 +51,13 @@ def test_pasos_numerados_en_lineas_separadas():
         "Sigue estos pasos:\n1. Activa el entorno.\n2. Instala las dependencias."
     sin_secuencia = "Usa Python 3. Luego revisa el paso 2. del instalador."
     assert pasos_en_lineas(sin_secuencia) == sin_secuencia
+
+
+def test_feedback_nunca_genera_contenido():
+    assert not es_oportunidad({"type": "FEEDBACK", "score": 0.99})
+
+
+def test_simulado_detecta_feedback():
+    msg = {"message_id": "MSG-0001", "canal": "general",
+           "texto": "Sugiero que el modulo de APIs tenga mas ejercicios, va muy rapido."}
+    assert simulado.clasificacion(msg)["type"] == "FEEDBACK"

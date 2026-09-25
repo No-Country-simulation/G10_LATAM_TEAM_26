@@ -19,7 +19,7 @@ logger = setup_logger("content_strategist")
 
 FORMATOS_POR_TIPO = {
     "SUCCESS_STORY": ["post_linkedin", "destaque_newsletter"],
-    "LOGRO": ["post_linkedin"],
+    "MILESTONE": ["post_linkedin"],
     "FAQ": ["sugerencia_faq"],
 }
 CANALES = {"post_linkedin": "LinkedIn Oficial"}

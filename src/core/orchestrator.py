@@ -4,9 +4,10 @@ Grafo LangGraph del motor y su API pública, que usan el panel, el bot y el CLI:
   procesar()         lista de mensajes -> paquete de distribución (Formato B)
   procesar_detalle() además devuelve el análisis por mensaje (Formato P) y lo que quedó pendiente
   clasificar()       solo análisis y detección: el paquete sale sin activos, en segundos
+  clasificar_en_segundo_plano() lo mismo en un hilo, con el avance lote por lote para el panel
   generar_contenido() redacta los activos de ese paquete en segundo plano
 """
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from langgraph.graph import END, StateGraph
 
@@ -16,7 +17,7 @@ from src.core.agents.classifier import community_classifier
 from src.core.agents.detector import hay_oportunidades, opportunity_detector
 from src.core.agents.strategist import content_strategist
 from src.core.estado import AgentState
-from src.core.generacion import GeneracionEnSegundoPlano
+from src.core.generacion import ClasificacionEnSegundoPlano, GeneracionEnSegundoPlano
 from src.core.packager import avisos, empaquetar, formato_p
 from src.utils.sanitizer import anonimizar_texto
 
@@ -90,14 +91,23 @@ def procesar_detalle(interacciones: List[Dict[str, Any]], metadatos: Optional[Di
 
 
 def clasificar(interacciones: List[Dict[str, Any]], metadatos: Optional[Dict[str, Any]] = None,
-               simulado: bool = False) -> Dict[str, Any]:
-    """Como procesar_detalle(), pero sin redactar: el paquete sale con la lista de activos vacía."""
+               simulado: bool = False, al_avanzar: Optional[Callable[[list], None]] = None) -> Dict[str, Any]:
+    """Como procesar_detalle(), pero sin redactar: el paquete sale con la lista de activos vacía.
+    `al_avanzar(filas)` recibe (mensaje, análisis, clasificación) de cada lote apenas se clasifica."""
     estado = app_clasificacion.invoke({"interacciones_originales": _preparar(interacciones),
                                        "metadatos_lote": metadatos or {},
-                                       "simulado": simulado})
+                                       "simulado": simulado},
+                                      config={"configurable": {"al_avanzar": al_avanzar}})
     estado.update(activos_generados=[], piezas_pendientes=[])
     paquete = empaquetar(estado)["paquete_final"]
     return {"paquete": paquete, "procesados": formato_p(estado), "avisos": avisos(estado), "estado": estado}
+
+
+def clasificar_en_segundo_plano(interacciones: List[Dict[str, Any]], metadatos: Optional[Dict[str, Any]] = None,
+                                simulado: bool = False) -> ClasificacionEnSegundoPlano:
+    """clasificar() en un hilo aparte: el panel muestra los mensajes clasificados a medida que llega cada lote."""
+    total = len(_preparar(interacciones))
+    return ClasificacionEnSegundoPlano(clasificar, interacciones, metadatos, simulado, total).iniciar()
 
 
 def generar_contenido(detalle: Dict[str, Any], simulado: bool = False) -> GeneracionEnSegundoPlano:

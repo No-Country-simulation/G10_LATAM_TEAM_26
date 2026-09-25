@@ -5,7 +5,7 @@ Arma el paquete de distribución (Formato B) y el análisis por mensaje (Formato
 import re
 from collections import Counter
 from datetime import datetime, timezone
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from src import config
 from src.core.agents.detector import CLASIFICACION_NEUTRA
@@ -13,10 +13,11 @@ from src.core.estado import AgentState
 
 NOMBRES_TIPO = {
     "SUCCESS_STORY": ("historia de éxito", "historias de éxito"),
-    "LOGRO": ("logro", "logros"),
+    "MILESTONE": ("logro", "logros"),
     "FAQ": ("pregunta técnica", "preguntas técnicas"),
-    "CONSULTA_OPERATIVA": ("consulta operativa", "consultas operativas"),
-    "OTRO": ("mensaje general", "mensajes generales"),
+    "OPERATIONAL_QUERY": ("consulta operativa", "consultas operativas"),
+    "FEEDBACK": ("feedback", "feedback"),
+    "NONE": ("mensaje general", "mensajes generales"),
 }
 
 
@@ -25,7 +26,7 @@ def _tendencias(analizados: List[Dict[str, Any]], clasificaciones: Dict[str, Dic
     """Temas sustantivos con 2 o más menciones, con el desglose por tipo de mensaje."""
     por_tema: Dict[str, Counter] = {}
     for m in analizados:
-        tipo = clasificaciones.get(m["message_id"], {}).get("type", "OTRO")
+        tipo = clasificaciones.get(m["message_id"], {}).get("type", "NONE")
         for tema in set(m["topics"]) - {config.TEMA_SOCIAL}:
             por_tema.setdefault(tema, Counter())[tipo] += 1
     tendencias = []
@@ -81,7 +82,8 @@ def empaquetar(state: AgentState):
             "distribucion_sentimiento": {s: sentimiento.get(s, 0) for s in ("positive", "neutral", "negative")},
             "temas_principales": [t for t, _ in temas.most_common(5)],
             "oportunidades_detectadas": len(state.get("oportunidades", [])),
-            "consultas_operativas": sum(1 for c in clasificaciones.values() if c["type"] == "CONSULTA_OPERATIVA"),
+            "consultas_operativas": sum(1 for c in clasificaciones.values() if c["type"] == "OPERATIONAL_QUERY"),
+            "feedback_recibido": sum(1 for c in clasificaciones.values() if c["type"] == "FEEDBACK"),
             "tendencias_detectadas": _tendencias(analizados, clasificaciones, periodo),
         },
         "activos": state.get("activos_generados", []),
@@ -94,19 +96,21 @@ def empaquetar(state: AgentState):
     return {"paquete_final": paquete_final}
 
 
+def fila_p(m: Dict[str, Any], c: Dict[str, Any], opportunity_id: Optional[str] = None) -> Dict[str, Any]:
+    """Un mensaje analizado (m) y su clasificación (c) en Formato P."""
+    return {
+        "tracking": {"message_id": m["message_id"], "source": m.get("source", "discord"),
+                     "channel": m.get("canal"), "timestamp": m.get("fecha")},
+        "analysis": {"sentiment": m["sentiment"], "topics": m["topics"], "intent": m.get("intencion", ""),
+                     "relevance_score": c["score"]},
+        "opportunity": {"opportunity_id": opportunity_id, "type": c["type"],
+                        "opportunity_score": c["score"], "reason": c["reason"]},
+    }
+
+
 def formato_p(state: AgentState) -> List[Dict[str, Any]]:
     """Análisis por mensaje (Formato P): tracking, analysis y opportunity, en el orden del lote."""
     clasificaciones = state.get("clasificaciones", {})
     opp_ids = {o["message_id"]: o["opportunity_id"] for o in state.get("oportunidades", [])}
-    procesados = []
-    for m in state.get("mensajes_analizados", []):
-        c = clasificaciones.get(m["message_id"], CLASIFICACION_NEUTRA)
-        procesados.append({
-            "tracking": {"message_id": m["message_id"], "source": m.get("source", "discord"),
-                         "channel": m.get("canal"), "timestamp": m.get("fecha")},
-            "analysis": {"sentiment": m["sentiment"], "topics": m["topics"], "intent": m.get("intencion", ""),
-                         "relevance_score": c["score"]},
-            "opportunity": {"opportunity_id": opp_ids.get(m["message_id"]), "type": c["type"],
-                            "opportunity_score": c["score"], "reason": c["reason"]},
-        })
-    return procesados
+    return [fila_p(m, clasificaciones.get(m["message_id"], CLASIFICACION_NEUTRA), opp_ids.get(m["message_id"]))
+            for m in state.get("mensajes_analizados", [])]

@@ -11,7 +11,7 @@ from src.core.prompts import PROMPT_DETECTOR
 from src.utils.texto import json_mensajes, lotes, texto_llm
 
 # Un mensaje que el modelo omite recibe esta clasificación explícita: nunca desaparece en silencio
-CLASIFICACION_NEUTRA = {"type": "OTRO", "score": 0.0,
+CLASIFICACION_NEUTRA = {"type": "NONE", "score": 0.0,
                         "reason": "sin clasificar (el modelo omitió este id); revisar manualmente"}
 
 

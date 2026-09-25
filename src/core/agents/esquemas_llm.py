@@ -20,7 +20,7 @@ class AnalisisLote(BaseModel):
 
 class Clasificacion(BaseModel):
     message_id: str
-    type: Literal["SUCCESS_STORY", "LOGRO", "FAQ", "CONSULTA_OPERATIVA", "OTRO"]
+    type: Literal["SUCCESS_STORY", "MILESTONE", "FAQ", "OPERATIONAL_QUERY", "FEEDBACK", "NONE"]
     score: float = Field(ge=0, le=1, description="Qué tan buena oportunidad de contenido es")
     reason: str = Field(description="Una frase explicando el tipo y el score")
 
@@ -33,7 +33,7 @@ class ClasificacionBreve(BaseModel):
     message_id: str
     sentiment: Literal["positive", "neutral", "negative"]
     topics: List[str] = Field(description="1 a 3 temas en minúsculas, o solo 'social' si es charla social")
-    type: Literal["SUCCESS_STORY", "LOGRO", "FAQ", "CONSULTA_OPERATIVA", "OTRO"]
+    type: Literal["SUCCESS_STORY", "MILESTONE", "FAQ", "OPERATIONAL_QUERY", "FEEDBACK", "NONE"]
 
 
 class Candidato(BaseModel):
@@ -45,7 +45,7 @@ class Candidato(BaseModel):
 class ClasificacionCompacta(BaseModel):
     mensajes: List[ClasificacionBreve]
     candidatos: List[Candidato] = Field(
-        default_factory=list, description="Solo mensajes SUCCESS_STORY, LOGRO o FAQ que podrían ser contenido")
+        default_factory=list, description="Solo mensajes SUCCESS_STORY, MILESTONE o FAQ que podrían ser contenido")
 
 
 class Borrador(BaseModel):
