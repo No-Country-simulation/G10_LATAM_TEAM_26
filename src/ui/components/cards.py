@@ -24,7 +24,7 @@ def get_pill_class(op_type: str) -> str:
         "MILESTONE": "pill-milestone",
         "FEEDBACK": "pill-feedback",
     }
-    return mapping.get(op_type.upper(), "pill-neutral")
+    return mapping.get((op_type or "").upper(), "pill-neutral")
 
 
 def render_interaction_card(msg_id: str, author: str, channel: str, text: str, op_type: str = "CONVERSACION",
