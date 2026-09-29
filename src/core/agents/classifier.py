@@ -14,7 +14,7 @@ from src.core.agents.esquemas_llm import ClasificacionCompacta
 from src.core.estado import AgentState
 from src.core.prompts import PROMPT_CLASIFICADOR
 from src.utils.logger import setup_logger
-from src.utils.texto import json_mensajes, lotes, texto_llm
+from src.utils.texto import json_mensajes, lotes_adaptativos, texto_llm
 
 logger = setup_logger("community_classifier")
 
@@ -80,7 +80,7 @@ def _clasificar_con_ia(mensajes: list, al_avanzar=None) -> dict:
     if resultados:
         logger.info(f"Caché: {len(resultados)} de {len(mensajes)} mensajes ya clasificados")
         _avisar(al_avanzar, [m for m in mensajes if m["message_id"] in resultados], resultados)
-    bloques = list(lotes(faltan))
+    bloques = lotes_adaptativos(faltan)
     por_lote = {}
 
     def al_completar(indice, respuesta):

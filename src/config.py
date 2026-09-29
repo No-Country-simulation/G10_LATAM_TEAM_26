@@ -26,6 +26,12 @@ RESPALDO = "groq" if PROVEEDOR == "gemini" else "gemini"
 # Elegidos por respuesta y precisión en la tarea de clasificación con 20 mensajes etiquetados.
 ALTERNOS_GEMINI = [m.strip() for m in os.getenv("LLM_GEMINI_ALTERNOS", "gemini-3-flash-preview,gemini-2.5-flash")
                    .split(",") if m.strip()]
+# Reparto de lotes: cada lote empieza por un modelo de Gemini distinto (en rueda), así la carga se reparte entre
+# las cuotas por modelo desde el inicio en vez de saturar el titular y recién ahí cambiar.
+# Solo en redacción: con el lote adaptativo la clasificación hace pocas llamadas y el titular (el más rápido) las
+# aguanta; repartirlas la hacía más lenta (300 mensajes: 23 s sin reparto contra 53 s con reparto).
+REPARTIR_LOTES = os.getenv("LLM_REPARTIR_LOTES", "1") == "1"
+ROLES_CON_REPARTO = ("redaccion",)
 
 TIPOS_OPORTUNIDAD = ("SUCCESS_STORY", "MILESTONE", "FAQ", "OPERATIONAL_QUERY", "FEEDBACK", "NONE")
 UMBRALES_POR_TIPO = {"SUCCESS_STORY": 0.8, "MILESTONE": 0.8, "FAQ": 0.7}  # solo estos tipos generan contenido
@@ -37,8 +43,14 @@ MODO_CLASIFICACION = os.getenv("LLM_CLASIFICACION", "compacta").lower()
 
 # Lotes de 10: el primero responde antes y el panel empieza a mostrar mensajes mientras llegan los demás
 TAMANO_LOTE = int(os.getenv("LLM_TAMANO_LOTE", "10"))
-# Con 8 piezas por llamada, el JSON de redacción supera lo que Groq valida con json_schema
-TAMANO_LOTE_CONTENIDO = int(os.getenv("LLM_TAMANO_LOTE_CONTENIDO", "4"))
+# Lote adaptativo en la clasificación: con más de UMBRAL_LOTE_GRANDE mensajes, la primera tanda (una por llamada en
+# paralelo) va en lotes de TAMANO_LOTE para mostrar resultados enseguida, y el resto en lotes de TAMANO_LOTE_GRANDE
+# para hacer menos llamadas y no chocar con el límite de solicitudes por minuto de las capas gratuitas
+TAMANO_LOTE_GRANDE = int(os.getenv("LLM_TAMANO_LOTE_GRANDE", "25"))
+UMBRAL_LOTE_GRANDE = int(os.getenv("LLM_UMBRAL_LOTE_GRANDE", "50"))
+# 6 piezas por llamada: con 300 mensajes la redacción baja de ~64 s (lotes de 4) a ~31 s, con menos rechazos por
+# cuota y menos piezas escritas por el respaldo. Con 8, el JSON de redacción supera lo que Groq valida con json_schema
+TAMANO_LOTE_CONTENIDO = int(os.getenv("LLM_TAMANO_LOTE_CONTENIDO", "6"))
 MAX_REINTENTOS_CUOTA = 3
 # Espera base entre reintentos por cuota (crece x1, x2, x3); bajarla acelera el paso al respaldo
 ESPERA_BASE_S = int(os.getenv("LLM_ESPERA_BASE", "30"))

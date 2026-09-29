@@ -29,17 +29,24 @@ def _disponible(proveedor: str) -> bool:
     return bool(os.getenv(config.PROVEEDORES[proveedor]["key"]))
 
 
-def cadena(rol: str) -> List[Eslabon]:
+def cadena(rol: str, turno: int = 0) -> List[Eslabon]:
     """Orden de modelos para un rol: el titular y, si es Gemini, sus alternos (misma key, cuota propia por modelo);
-    luego el otro proveedor. Solo entran los proveedores con API key."""
+    luego el otro proveedor. Solo entran los proveedores con API key.
+    Con REPARTIR_LOTES y un rol de ROLES_CON_REPARTO, `turno` (el índice del lote) rota los modelos de Gemini: el
+    lote 0 empieza por el titular, el 1 por el primer alterno, el 2 por el segundo, y así en rueda; el otro
+    proveedor sigue al final."""
     eslabones: List[Eslabon] = []
     for proveedor in (config.PROVEEDOR, config.RESPALDO):
         if not _disponible(proveedor):
             continue
         principal = modelo(proveedor, rol)
-        eslabones.append((proveedor, principal))
+        grupo = [(proveedor, principal)]
         if proveedor == "gemini":
-            eslabones += [("gemini", m) for m in config.ALTERNOS_GEMINI if m != principal]
+            grupo += [("gemini", m) for m in config.ALTERNOS_GEMINI if m != principal]
+            if config.REPARTIR_LOTES and rol in config.ROLES_CON_REPARTO and turno:
+                corrimiento = turno % len(grupo)
+                grupo = grupo[corrimiento:] + grupo[:corrimiento]
+        eslabones += grupo
     return eslabones
 
 
@@ -132,10 +139,11 @@ def _con_cobertura(eslabones: List[Eslabon], args: tuple):
     raise ultimo_error
 
 
-def invocar(prompt, esquema, rol: str, temperature: float, entrada: Dict[str, Any]):
+def invocar(prompt, esquema, rol: str, temperature: float, entrada: Dict[str, Any], turno: int = 0):
     """Una llamada estructurada por la cadena de modelos del rol. En los roles con cobertura, además de conmutar
-    ante errores, lanza el siguiente eslabón en paralelo cuando el actual se demora."""
-    eslabones = cadena(rol)
+    ante errores, lanza el siguiente eslabón en paralelo cuando el actual se demora.
+    `turno` es el índice del lote: decide por qué modelo de Gemini empieza la cadena (ver cadena())."""
+    eslabones = cadena(rol, turno)
     if not eslabones:
         raise RuntimeError("Ningún proveedor disponible (revisa las API keys del .env).")
     args = (prompt, esquema, rol, temperature, entrada)
@@ -163,7 +171,7 @@ def invocar_lotes(prompt, esquema, rol: str, temperature: float, entradas: List[
     def uno(indice_par):
         indice, (p, entrada) = indice_par
         try:
-            resultado = invocar(p, esquema, rol, temperature, entrada)
+            resultado = invocar(p, esquema, rol, temperature, entrada, turno=indice)
         except Exception as error:
             logger.error(f"Un lote de {rol} falló ({type(error).__name__}); se marca como pendiente")
             resultado = None

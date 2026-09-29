@@ -85,12 +85,14 @@ def _entrada_lote(lote: List[Dict[str, Any]]) -> Dict[str, str]:
     return {"piezas": json.dumps([_entrada_pieza(p) for p in lote], ensure_ascii=False)}
 
 
-def redactar_lote(lote: List[Dict[str, Any]], modo_simulado: bool = False) -> Dict[str, Borrador]:
-    """Redacta un lote y devuelve los borradores por pieza_id (vacío si el lote falla)."""
+def redactar_lote(lote: List[Dict[str, Any]], modo_simulado: bool = False, turno: int = 0) -> Dict[str, Borrador]:
+    """Redacta un lote y devuelve los borradores por pieza_id (vacío si el lote falla).
+    `turno` es el índice del lote, para repartir los lotes entre los modelos."""
     if modo_simulado:
         return {p["pieza_id"]: simulado.borrador(p["pieza_id"], p["opp"]["texto"]) for p in lote}
     try:
-        r = invocar(PROMPTS_REDACCION[lote[0]["formato"]], BorradorLote, "redaccion", 0.4, _entrada_lote(lote))
+        r = invocar(PROMPTS_REDACCION[lote[0]["formato"]], BorradorLote, "redaccion", 0.4, _entrada_lote(lote),
+                    turno=turno)
     except Exception as error:
         logger.error(f"Un lote de redacción falló ({type(error).__name__}); se marca como pendiente")
         return {}

@@ -96,7 +96,8 @@ class GeneracionEnSegundoPlano:
     def _correr(self) -> None:
         try:
             with ThreadPoolExecutor(max_workers=max(1, min(config.MAX_CONCURRENCIA, len(self.lotes)))) as ejecutor:
-                futuros = {ejecutor.submit(redactar_lote, lote, self.modo_simulado): lote for lote in self.lotes}
+                futuros = {ejecutor.submit(redactar_lote, lote, self.modo_simulado, i): lote
+                           for i, lote in enumerate(self.lotes)}
                 for futuro in as_completed(futuros):
                     por_id = futuro.result()
                     for pieza in futuros[futuro]:

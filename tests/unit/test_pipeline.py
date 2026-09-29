@@ -61,3 +61,15 @@ def test_simulado_detecta_feedback():
     msg = {"message_id": "MSG-0001", "canal": "general",
            "texto": "Sugiero que el modulo de APIs tenga mas ejercicios, va muy rapido."}
     assert simulado.clasificacion(msg)["type"] == "FEEDBACK"
+
+
+def test_lotes_adaptativos_primera_tanda_chica_y_resto_grande(monkeypatch):
+    from src import config
+    from src.utils.texto import lotes_adaptativos
+    monkeypatch.setattr(config, "TAMANO_LOTE", 10)
+    monkeypatch.setattr(config, "TAMANO_LOTE_GRANDE", 25)
+    monkeypatch.setattr(config, "UMBRAL_LOTE_GRANDE", 50)
+    monkeypatch.setattr(config, "MAX_CONCURRENCIA", 3)
+    assert [len(l) for l in lotes_adaptativos(list(range(40)))] == [10, 10, 10, 10]
+    tamanos = [len(l) for l in lotes_adaptativos(list(range(300)))]
+    assert tamanos[:3] == [10, 10, 10] and set(tamanos[3:-1]) == {25} and sum(tamanos) == 300

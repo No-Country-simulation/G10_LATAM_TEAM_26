@@ -38,5 +38,15 @@ def lotes(items: List[Any], n: Optional[int] = None) -> Iterator[List[Any]]:
         yield items[i:i + n]
 
 
+def lotes_adaptativos(items: List[Any]) -> List[List[Any]]:
+    """Lotes de clasificación: hasta UMBRAL_LOTE_GRANDE mensajes, todos de TAMANO_LOTE; por encima, la primera
+    tanda (MAX_CONCURRENCIA lotes) de TAMANO_LOTE y el resto de TAMANO_LOTE_GRANDE."""
+    chico, grande = config.TAMANO_LOTE, config.TAMANO_LOTE_GRANDE
+    if len(items) <= config.UMBRAL_LOTE_GRANDE or grande <= chico:
+        return list(lotes(items, chico))
+    corte = chico * max(config.MAX_CONCURRENCIA, 1)
+    return list(lotes(items[:corte], chico)) + list(lotes(items[corte:], grande))
+
+
 def json_mensajes(mensajes: List[Dict[str, Any]], campos: List[str]) -> str:
     return json.dumps([{c: m.get(c) for c in campos} for m in mensajes], ensure_ascii=False)

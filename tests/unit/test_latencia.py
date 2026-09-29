@@ -41,6 +41,19 @@ def test_cadena_prueba_alternos_de_gemini_antes_que_groq(cadena_de_cuatro):
     assert cadena_de_cuatro[3] == config.PROVEEDORES["groq"]["analisis"]
 
 
+def test_reparto_rota_los_modelos_de_gemini_solo_en_redaccion(cadena_de_cuatro, monkeypatch):
+    monkeypatch.setattr(config, "REPARTIR_LOTES", True)
+    titular = proveedores.cadena("redaccion")[0][1]
+    primeros = [proveedores.cadena("redaccion", turno)[0][1] for turno in range(4)]
+    assert primeros == [titular, "alterno-1", "alterno-2", titular]
+    for turno in range(4):  # el otro proveedor siempre queda al final
+        assert proveedores.cadena("redaccion", turno)[-1][0] == "groq"
+    # la clasificación no se reparte: todos los lotes empiezan por el titular
+    assert {proveedores.cadena("analisis", turno)[0][1] for turno in range(4)} == {cadena_de_cuatro[0]}
+    monkeypatch.setattr(config, "REPARTIR_LOTES", False)
+    assert proveedores.cadena("redaccion", 1)[0][1] == titular
+
+
 def test_cobertura_gana_el_primer_alterno_si_el_titular_se_demora(cadena_de_cuatro, monkeypatch):
     monkeypatch.setattr(proveedores, "_invocar_en", _falsos([2.0, 0.05, 2.0, 2.0]))
     inicio = time.perf_counter()
