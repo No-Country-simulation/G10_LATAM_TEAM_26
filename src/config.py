@@ -66,5 +66,14 @@ RAZONAMIENTO_GROQ = os.getenv("LLM_RAZONAMIENTO_GROQ", "low")
 USAR_CACHE = os.getenv("LLM_CACHE", "1") == "1"
 ARCHIVO_CACHE = RAIZ / "data" / "cache" / "clasificaciones.json"
 
+# Imágenes de las publicaciones: se generan en segundo plano con Pollinations (gratis), de mayor a menor score.
+# Sin cuenta acepta ~1 imagen por minuto (medido: con 30 s responde 402) y agrega marca de agua; con token gratuito
+# (auth.pollinations.ai) la documentación indica 1 cada 5 s y sin marca de agua.
+GENERAR_IMAGENES = os.getenv("LLM_IMAGENES", "1") == "1"
+POLLINATIONS_TOKEN = os.getenv("POLLINATIONS_TOKEN", "")
+IMAGENES_INTERVALO_S = float(os.getenv("IMAGENES_INTERVALO_S", "5" if POLLINATIONS_TOKEN else "60"))
+IMAGENES_INTENTOS = 3  # ante el límite del servicio (402/429) la imagen vuelve a la cola, hasta este número de veces
+IMAGENES_MAX = int(os.getenv("IMAGENES_MAX", "0"))  # 0 = todas las piezas del paquete
+
 BUCKET_OCI = os.getenv("OCI_BUCKET_NAME", "communitylab-bucket")
 DIRECTORIO_SALIDAS = RAIZ / "salidas"

@@ -99,14 +99,28 @@ def redactar_lote(lote: List[Dict[str, Any]], modo_simulado: bool = False, turno
     return {b.pieza_id: b for b in (r.borradores if r else [])}
 
 
-def construir_activo(pieza: Dict[str, Any], borrador: Borrador) -> Dict[str, Any]:
-    return {
+# Objeto por defecto para la imagen si el modelo no propuso uno
+OBJETO_POR_TIPO = {
+    "SUCCESS_STORY": "a silver trophy next to an open laptop on a clean desk",
+    "MILESTONE": "a golden medal resting on a stack of books",
+    "FAQ": "a glowing lightbulb above an open laptop",
+}
+
+
+def construir_activo(pieza: Dict[str, Any], borrador: Borrador, con_imagen: bool = False) -> Dict[str, Any]:
+    """Activo del Formato B. Con `con_imagen`, nace con la imagen pendiente para que la genere el hilo de imágenes
+    (solo el panel con IA real; la CLI y el modo simulado no generan imágenes)."""
+    activo = {
         "activo_id": pieza["activo_id"],
         "formato": pieza["formato"],
         "estado_curaduria": "borrador",
         "origen": _origen(pieza["opp"]),
         "contenido": _contenido(pieza["formato"], borrador),
     }
+    if con_imagen:
+        prompt = texto_llm(borrador.prompt_imagen) or OBJETO_POR_TIPO.get(pieza["opp"]["type"], OBJETO_POR_TIPO["FAQ"])
+        activo["imagen"] = {"estado": "pendiente", "prompt": prompt, "ruta": None, "proveedor": None}
+    return activo
 
 
 def content_strategist(state: AgentState):

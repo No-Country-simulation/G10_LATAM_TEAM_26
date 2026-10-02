@@ -3,9 +3,12 @@ CommunityLab AI - Vista: Content Studio (Curaduría Multiformato)
 Edita y aprueba los activos del paquete (Formato B). El panel es el único módulo que cambia
 estado_curaduria: borrador -> aprobado | descartado; editar un aprobado lo devuelve a borrador.
 """
+from pathlib import Path
+
 import streamlit as st
 
 from src.core.agents.strategist import regenerar_pieza
+from src.core.orchestrator import generar_imagenes
 from src.ui.components.post_editor import render_linkedin_editor
 
 ETIQUETAS = {"post_linkedin": "📱 Post LinkedIn", "destaque_newsletter": "📰 Newsletter", "sugerencia_faq": "💡 FAQ"}
@@ -23,6 +26,45 @@ def _guardar(activo: dict, contenido: dict, estado: str) -> None:
 
 def _editado(activo: dict, contenido: dict) -> bool:
     return any(activo["contenido"].get(k) != v for k, v in contenido.items())
+
+
+TEXTOS_IMAGEN = {
+    "pendiente": "⏳ En cola: se genera en segundo plano, de mayor a menor score.",
+    "generando": "🎨 Generando la imagen…",
+    "omitida": "Se alcanzó el máximo de imágenes por paquete (IMAGENES_MAX).",
+}
+
+
+def _relanzar_imagenes(paquete: dict) -> None:
+    """Si el hilo de imágenes ya terminó, arranca otro para las que quedaron pendientes (p. ej. un reintento)."""
+    hilo = st.session_state.get("hilo_imagenes")
+    if not hilo or hilo.terminado:
+        st.session_state["hilo_imagenes"] = generar_imagenes(paquete)
+
+
+@st.fragment(run_every=3)
+def imagen_del_activo(activo: dict, paquete: dict, prefijo: str):
+    """Imagen de la publicación: se refresca sola mientras está en cola o generándose."""
+    imagen = activo.get("imagen")
+    st.markdown("##### 🖼️ Imagen de la publicación")
+    if not imagen:
+        st.caption("Sin imagen (modo simulado, línea de comandos o imágenes desactivadas con LLM_IMAGENES=0).")
+        return
+    estado = imagen.get("estado")
+    if estado == "lista" and imagen.get("ruta"):
+        st.image(imagen["ruta"], use_container_width=True)
+        with open(imagen["ruta"], "rb") as archivo:
+            st.download_button("⬇️ Descargar imagen", archivo.read(), file_name=Path(imagen["ruta"]).name,
+                               key=f"{prefijo}_img_descargar")
+    elif estado == "error":
+        st.warning(f"No se pudo generar la imagen ({imagen.get('detalle', 'error')}).")
+    else:
+        st.info(TEXTOS_IMAGEN.get(estado, estado))
+    st.caption(f"Prompt: {imagen.get('prompt', '')}")
+    if estado in ("lista", "error", "omitida") and st.button("🔄 Generar otra imagen", key=f"{prefijo}_img_otra"):
+        imagen.update(estado="pendiente", ruta=None, intentos=0)
+        _relanzar_imagenes(paquete)
+        st.rerun(scope="fragment")
 
 
 @st.fragment(run_every=2)
@@ -126,6 +168,9 @@ def render_studio_view():
             c_a, c_b = st.columns(2)
             aprobar = c_a.button("✅ Aprobar", key=f"{prefijo}_aprobar", type="primary", use_container_width=True)
             descartar = c_b.button("🚫 Descartar", key=f"{prefijo}_descartar", use_container_width=True)
+
+    with st.container(border=True):
+        imagen_del_activo(activo, paquete, prefijo)
 
     if aprobar:
         _guardar(activo, editado, "aprobado")

@@ -8,7 +8,7 @@ import streamlit as st
 
 from src import config
 from src.adapters.ingestion.loaders import interacciones_desde_payload
-from src.core.orchestrator import clasificar_en_segundo_plano, generar_contenido
+from src.core.orchestrator import clasificar_en_segundo_plano, generar_contenido, generar_imagenes
 from src.domain.schemas import BatchInputPayload
 from src.ui.components.cards import render_interaction_card, render_kpi_card
 from src.ui.components.salud import necesita_apoyo, render_salud_comunidad
@@ -61,7 +61,10 @@ def progreso_clasificacion():
     st.session_state["avisos"] = detalle["avisos"]
     st.session_state["segundos_clasificacion"] = clasificacion.segundos
     st.session_state["inicio_redaccion"] = time.perf_counter()
-    st.session_state["generacion"] = generar_contenido(detalle, simulado=st.session_state.get("modo_simulado", False))
+    simulado = st.session_state.get("modo_simulado", False)
+    st.session_state["generacion"] = generar_contenido(detalle, simulado=simulado)
+    if not simulado:  # las imágenes se generan en otro hilo, de mayor a menor score, sin bloquear el paquete
+        st.session_state["hilo_imagenes"] = generar_imagenes(detalle["paquete"], st.session_state["generacion"])
     st.rerun(scope="app")  # pasa a la vista completa con métricas, salud y filtros
 
 
@@ -114,6 +117,9 @@ def render_explorer_view(dataset: BatchInputPayload | None):
 
     if iniciar:
         interacciones, metadatos = interacciones_desde_payload(dataset, int(cantidad))
+        anterior = st.session_state.pop("hilo_imagenes", None)
+        if anterior:  # un lote nuevo: no se siguen generando imágenes del anterior
+            anterior.detener()
         for clave in ("paquete", "procesados", "avisos", "generacion", "redaccion_notificada", "oci_result"):
             st.session_state.pop(clave, None)
         st.session_state["modo_simulado"] = simulado

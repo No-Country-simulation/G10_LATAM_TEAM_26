@@ -68,6 +68,8 @@ class Activo(BaseModel):
     estado_curaduria: Literal["borrador", "aprobado", "publicado", "descartado"]
     origen: OrigenActivo
     contenido: Dict[str, Any]
+    # Imagen de la publicación (opcional): estado pendiente | generando | lista | error | omitida, prompt y ruta
+    imagen: Optional[Dict[str, Any]] = None
 
     @model_validator(mode="after")
     def _contenido_segun_formato(self):

@@ -78,6 +78,9 @@ REGLAS_REDACCION = (
     "('fue contratado/a', 'fue ascendido/a', 'seleccionada'); usa formas neutras como 'consiguió el puesto' o "
     "'recibió un ascenso'. Los roles u oficios cítalos tal como el autor los escribió.\n"
     "Tutea al lector (nunca voseo) y no uses mayúsculas para enfatizar.\n"
+    "prompt_imagen: en inglés, máximo 25 palabras, describe UN solo objeto físico simple que represente la pieza "
+    "(por ejemplo, a silver trophy next to a laptop, o a padlock on a server), con su color y posición. Sin personas, "
+    "sin nombres y sin texto en la imagen.\n"
     "Devuelve un borrador por cada pieza recibida, con el mismo pieza_id.\n\n"
 )
 

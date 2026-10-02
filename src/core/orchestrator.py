@@ -17,7 +17,7 @@ from src.core.agents.classifier import community_classifier
 from src.core.agents.detector import hay_oportunidades, opportunity_detector
 from src.core.agents.strategist import content_strategist
 from src.core.estado import AgentState
-from src.core.generacion import ClasificacionEnSegundoPlano, GeneracionEnSegundoPlano
+from src.core.generacion import ClasificacionEnSegundoPlano, GeneracionEnSegundoPlano, ImagenesEnSegundoPlano
 from src.core.packager import avisos, empaquetar, formato_p
 from src.utils.sanitizer import anonimizar_texto
 
@@ -113,3 +113,12 @@ def clasificar_en_segundo_plano(interacciones: List[Dict[str, Any]], metadatos: 
 def generar_contenido(detalle: Dict[str, Any], simulado: bool = False) -> GeneracionEnSegundoPlano:
     """Redacta en segundo plano los activos del paquete que devolvió clasificar()."""
     return GeneracionEnSegundoPlano(detalle["estado"], detalle["paquete"], simulado).iniciar()
+
+
+def generar_imagenes(paquete: Dict[str, Any],
+                     generacion: Optional[GeneracionEnSegundoPlano] = None) -> Optional[ImagenesEnSegundoPlano]:
+    """Genera en segundo plano las imágenes pendientes del paquete, a medida que la redacción agrega activos.
+    Devuelve None si las imágenes están desactivadas (LLM_IMAGENES=0)."""
+    if not config.GENERAR_IMAGENES:
+        return None
+    return ImagenesEnSegundoPlano(paquete, generacion).iniciar()

@@ -1,5 +1,6 @@
 discord.py>=2.4
 python-dotenv>=1.0
+requests>=2.31
 pydantic>=2.7
 streamlit>=1.38
 langgraph>=0.2

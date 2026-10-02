@@ -57,6 +57,8 @@ class Borrador(BaseModel):
         default=None, description="Solo post_linkedin")
     seccion: Optional[str] = Field(default=None, description="Solo destaque_newsletter")
     origen_descripcion: Optional[str] = Field(default=None, description="Solo sugerencia_faq")
+    prompt_imagen: Optional[str] = Field(
+        default=None, description="En inglés: un único objeto físico simple que represente la pieza, para la imagen")
 
 
 class BorradorLote(BaseModel):
