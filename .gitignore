@@ -15,3 +15,5 @@ data/raw/
 .idea/
 Thumbs.db
 .DS_Store
+*.zip
+data/*.zip

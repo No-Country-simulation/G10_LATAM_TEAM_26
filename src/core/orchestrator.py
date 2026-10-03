@@ -1,5 +1,5 @@
 """
-CommunityLab AI - Orchestrator (Modo Batch Optimizado)
+CommunityLab AI - Orchestrator (Modo Batch con Deduplicación OCI Real)
 """
 from typing import List, Tuple, Optional
 from src.domain.schemas import (
@@ -14,22 +14,28 @@ from src.domain.schemas import (
 )
 from src.utils.sanitizer import anonimizar_texto, anonimizar_autor
 from src.core.agents.batch_agent import analyze_batch_with_llm
-from src.core.agents.detector import detect_opportunity
+from src.adapters.db.repository import filter_unprocessed_interactions, save_processed_messages
 from src.utils.logger import setup_logger
 
 logger = setup_logger("orchestrator")
 
 
 def process_batch_pipeline(interactions: List[RawMessageInteraction]) -> Tuple[List[Tuple[ProcessedMessage, Optional[GeneratedAssets]]], dict]:
-    """
-    Procesa un conjunto de mensajes en UNA SOLA llamada a la IA.
-    Garantiza que TODOS los mensajes (aprobados y descartados) permanezcan en los resultados.
-    """
-    # 1. Sanitización preventiva
+    # 1. FILTRAR CONTRA ORACLE CLOUD: Solo tomar los que NO están en la base de datos
+    mensajes_nuevos = filter_unprocessed_interactions(interactions)
+
+    if not mensajes_nuevos:
+        logger.info("Todos los mensajes ya existen en la base de datos de Oracle Cloud.")
+        return [], {
+            "total_procesados": 0, 
+            "sentimiento_predominante": "N/A", 
+            "temas_principales": ["Sin mensajes nuevos (Todos en OCI)"]
+        }
+
+    # 2. Sanitizar el lote de mensajes pendientes
     sanitized_batch = []
-    # Guardamos los mensajes en orden original usando una lista y un diccionario
     mensajes_ordenados = []
-    for m in interactions:
+    for m in mensajes_nuevos:
         c_text = anonimizar_texto(m.texto)
         c_auth = anonimizar_autor(m.autor)
         item = {
@@ -42,12 +48,12 @@ def process_batch_pipeline(interactions: List[RawMessageInteraction]) -> Tuple[L
         sanitized_batch.append(item)
         mensajes_ordenados.append((m, c_auth, c_text))
 
-    # 2. Invocación única a Gemini
+    # 3. Invocación única a Gemini
     batch_result = analyze_batch_with_llm(sanitized_batch)
 
     final_results = []
     resumen = {
-        "total_procesados": len(interactions),
+        "total_procesados": len(mensajes_nuevos),
         "sentimiento_predominante": "Positivo",
         "temas_principales": ["Comunidad Tech"]
     }
@@ -55,16 +61,12 @@ def process_batch_pipeline(interactions: List[RawMessageInteraction]) -> Tuple[L
     if batch_result:
         resumen["sentimiento_predominante"] = batch_result.resumen_lote.get("sentimiento_predominante", "Positivo")
         resumen["temas_principales"] = batch_result.resumen_lote.get("temas_en_tendencia", ["Comunidad"])
-
-        # Mapear las oportunidades que la IA seleccionó (las >= 0.70)
         op_map = {op.message_id: op for op in batch_result.oportunidades}
 
-        # RECORREMOS CADA UNO DE LOS MENSAJES ORIGINALES (Para no perder ninguno)
         for raw, c_auth, c_text in mensajes_ordenados:
             m_id = raw.message_id
 
             if m_id in op_map:
-                # Caso A: Fue seleccionado por la IA (Score >= 0.70)
                 op_data = op_map[m_id]
                 analysis = SemanticAnalysis(
                     sentiment="positive" if op_data.tipo_oportunidad == OpportunityType.SUCCESS_STORY else "neutral",
@@ -105,7 +107,6 @@ def process_batch_pipeline(interactions: List[RawMessageInteraction]) -> Tuple[L
                 final_results.append((proc, assets))
 
             else:
-                # Caso B: Fue descartado por la IA (< 0.70) -> ¡AQUÍ ESTABAN LOS 21 FALTANTES!
                 analysis = SemanticAnalysis(
                     sentiment="neutral", 
                     topics=["Conversación casual"], 
@@ -123,27 +124,8 @@ def process_batch_pipeline(interactions: List[RawMessageInteraction]) -> Tuple[L
                 )
                 final_results.append((proc, None))
 
-        return final_results, resumen
-
-    # 3. Fallback Heurístico si la API falla
-    logger.warning("Usando pipeline heurístico de contingencia.")
-    for raw, c_auth, c_text in mensajes_ordenados:
-        analysis = SemanticAnalysis(sentiment="neutral", topics=["Comunidad"], relevance_score=0.5)
-        op_res = detect_opportunity(c_text, raw.tipo_declarado, analysis, raw.metadata)
-        assets = None
-        if op_res.opportunity_score >= 0.70:
-            assets = GeneratedAssets(
-                post_linkedin=PostLinkedIn(
-                    titulo="De la Formación al Mercado Tech 🚀",
-                    texto_copy=f"¡Orgullo en la comunidad! {c_auth} nos comparte:\n\"{c_text}\"\n\n#TalentosTech #OracleCloud #ComunidadONE",
-                    canal_recomendado="LinkedIn Oficial",
-                    potencial_engagement="Alto"
-                )
-            )
-        proc = ProcessedMessage(
-            message_id=raw.message_id, channel=raw.channel, autor_anonimizado=c_auth,
-            texto_limpio=c_text, analysis=analysis, opportunity=op_res
-        )
-        final_results.append((proc, assets))
+    # 4. GUARDAR EN ORACLE CLOUD (OCI)
+    if final_results:
+        save_processed_messages(final_results)
 
     return final_results, resumen

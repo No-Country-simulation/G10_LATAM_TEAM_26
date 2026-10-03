@@ -1,0 +1,20 @@
+{
+  "status": "exito",
+  "resumen_comunidad": {
+    "total_interacciones_procesadas": 40,
+    "sentimiento_predominante": "Altamente Positivo",
+    "temas_principales": [
+      "Contratacion / Logros",
+      "LangChain / OCI",
+      "n8n / Automatización"
+    ]
+  },
+  "activos_distribucion_generados": {
+    "post_linkedin": {
+      "titulo": "¡De la duda al primer empleo tech!",
+      "copy": "¡Las historias que nos llenan de orgullo! Nuestro miembro Gregory nos comparte que hoy comenzó oficialmente su primer trabajo como Dev. Demostrando que con constancia y comunidad, sí se puede lograr. ¡Felicitaciones! #TalentosTech #OracleCloud #PrimerEmpleo #Developer",
+      "canal_recomendado": "LinkedIn Oficial",
+      "potencial_engagement": "Alto"
+    }
+  }
+}

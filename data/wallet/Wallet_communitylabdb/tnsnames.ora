@@ -1,0 +1,12 @@
+communitylabdb_high = (description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.sa-santiago-1.oraclecloud.com))(connect_data=(service_name=gba1a4acfd188b3_communitylabdb_high.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))
+
+communitylabdb_medium = (description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.sa-santiago-1.oraclecloud.com))(connect_data=(service_name=gba1a4acfd188b3_communitylabdb_medium.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))
+
+communitylabdb_low = (description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.sa-santiago-1.oraclecloud.com))(connect_data=(service_name=gba1a4acfd188b3_communitylabdb_low.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))
+
+communitylabdb_tp = (description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.sa-santiago-1.oraclecloud.com))(connect_data=(service_name=gba1a4acfd188b3_communitylabdb_tp.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))
+
+communitylabdb_tpurgent = (description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.sa-santiago-1.oraclecloud.com))(connect_data=(service_name=gba1a4acfd188b3_communitylabdb_tpurgent.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))
+
+
+

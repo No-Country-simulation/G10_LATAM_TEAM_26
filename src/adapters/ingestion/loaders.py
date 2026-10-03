@@ -28,24 +28,20 @@ def load_fixture_data(file_path: str = "data/fixtures/lote_ejemplo_formato_a.jso
 
 
 def load_discord_raw_stream(raw_dir: str = "data/raw") -> Optional[BatchInputPayload]:
-    """
-    Lee las capturas en bruto (.jsonl) generadas por el bot de Discord en data/raw/,
-    aplica filtrado inicial y normaliza los mensajes al contrato BatchInputPayload.
-    """
     raw_path = Path(raw_dir)
     if not raw_path.exists():
         return None
 
-    # Buscar todos los archivos .jsonl recursivamente
     jsonl_files = list(raw_path.glob("**/*discord_capturas.jsonl"))
     if not jsonl_files:
         return None
 
-    # Tomar el más reciente por fecha de modificación
     latest_file = max(jsonl_files, key=lambda f: f.stat().st_mtime)
     logger.info(f"Cargando stream de Discord desde: {latest_file}")
 
     interacciones: List[RawMessageInteraction] = []
+    # Conjunto para evitar duplicados dentro del mismo archivo de texto
+    ids_vistos = set()
 
     with open(latest_file, "r", encoding="utf-8") as f:
         for line in f:
@@ -57,7 +53,6 @@ def load_discord_raw_stream(raw_dir: str = "data/raw") -> Optional[BatchInputPay
             except json.JSONDecodeError:
                 continue
 
-            # Descartar mensajes de bots
             if raw_msg.get("author", {}).get("bot", False):
                 continue
 
@@ -65,9 +60,13 @@ def load_discord_raw_stream(raw_dir: str = "data/raw") -> Optional[BatchInputPay
             if not content.strip():
                 continue
 
-            channel_name = raw_msg.get("channel", {}).get("name", "general").lower()
+            msg_id = f"DISC-{raw_msg['id']}"
             
-            # Clasificación heurística inicial basada en el canal de origen
+            if msg_id in ids_vistos:
+                continue
+            ids_vistos.add(msg_id)
+
+            channel_name = raw_msg.get("channel", {}).get("name", "general").lower()
             tipo_declarado = "conversacion"
             if "logro" in channel_name or "empleo" in channel_name:
                 tipo_declarado = "testimonio"
@@ -76,23 +75,18 @@ def load_discord_raw_stream(raw_dir: str = "data/raw") -> Optional[BatchInputPay
             elif "feedback" in channel_name:
                 tipo_declarado = "feedback"
 
-            # Sumar conteo de reacciones del mensaje
             total_reacciones = sum(r.get("count", 0) for r in raw_msg.get("reactions", []))
 
             interacciones.append(
                 RawMessageInteraction(
-                    message_id=f"DISC-{raw_msg['id'][-6:]}",
+                    message_id=msg_id,
                     source="discord_live",
                     channel=channel_name,
                     timestamp=raw_msg.get("timestamp", ""),
                     autor=raw_msg.get("author", {}).get("display_name", "Miembro Discord"),
                     tipo_declarado=tipo_declarado,
                     texto=content,
-                    metadata={
-                        "reacciones": total_reacciones,
-                        "respuestas": 0,
-                        "attachments": len(raw_msg.get("attachments", []))
-                    }
+                    metadata={"reacciones": total_reacciones}
                 )
             )
 
