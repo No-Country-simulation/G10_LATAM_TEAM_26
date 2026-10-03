@@ -1,5 +1,6 @@
 """
-CommunityLab AI - Orchestrator (Modo Batch con Deduplicación OCI Real)
+CommunityLab AI - Orchestrator
+Pipeline Multiagente consolidado con Deduplicación OCI y Micro-Batching.
 """
 from typing import List, Tuple, Optional
 from src.domain.schemas import (
@@ -21,7 +22,7 @@ logger = setup_logger("orchestrator")
 
 
 def process_batch_pipeline(interactions: List[RawMessageInteraction]) -> Tuple[List[Tuple[ProcessedMessage, Optional[GeneratedAssets]]], dict]:
-    # 1. FILTRAR CONTRA ORACLE CLOUD: Solo tomar los que NO están en la base de datos
+    # 1. Filtro estricto contra Oracle Cloud (Deduplicación en OCI)
     mensajes_nuevos = filter_unprocessed_interactions(interactions)
 
     if not mensajes_nuevos:
@@ -29,10 +30,10 @@ def process_batch_pipeline(interactions: List[RawMessageInteraction]) -> Tuple[L
         return [], {
             "total_procesados": 0, 
             "sentimiento_predominante": "N/A", 
-            "temas_principales": ["Sin mensajes nuevos (Todos en OCI)"]
+            "temas_principales": ["Sin mensajes nuevos (Deduplicados en OCI)"]
         }
 
-    # 2. Sanitizar el lote de mensajes pendientes
+    # 2. Sanitización preventiva del lote
     sanitized_batch = []
     mensajes_ordenados = []
     for m in mensajes_nuevos:
@@ -48,7 +49,7 @@ def process_batch_pipeline(interactions: List[RawMessageInteraction]) -> Tuple[L
         sanitized_batch.append(item)
         mensajes_ordenados.append((m, c_auth, c_text))
 
-    # 3. Invocación única a Gemini
+    # 3. Invocación única al LLM
     batch_result = analyze_batch_with_llm(sanitized_batch)
 
     final_results = []
@@ -105,26 +106,16 @@ def process_batch_pipeline(interactions: List[RawMessageInteraction]) -> Tuple[L
                     texto_limpio=c_text, analysis=analysis, opportunity=op_res
                 )
                 final_results.append((proc, assets))
-
             else:
-                analysis = SemanticAnalysis(
-                    sentiment="neutral", 
-                    topics=["Conversación casual"], 
-                    relevance_score=0.30,
-                    intent="descartado"
-                )
-                op_res = OpportunityResult(
-                    type=OpportunityType.NONE, 
-                    opportunity_score=0.30, 
-                    reason="Descartado por la IA: conversación informal sin valor para marketing."
-                )
+                analysis = SemanticAnalysis(sentiment="neutral", topics=["Conversación casual"], relevance_score=0.30, intent="descartado")
+                op_res = OpportunityResult(type=OpportunityType.NONE, opportunity_score=0.30, reason="Conversación casual.")
                 proc = ProcessedMessage(
                     message_id=raw.message_id, channel=raw.channel, autor_anonimizado=c_auth,
                     texto_limpio=c_text, analysis=analysis, opportunity=op_res
                 )
                 final_results.append((proc, None))
 
-    # 4. GUARDAR EN ORACLE CLOUD (OCI)
+    # 4. Guardar en Oracle Cloud los mensajes procesados
     if final_results:
         save_processed_messages(final_results)
 

@@ -1,5 +1,5 @@
 """
-CommunityLab AI - Vista: Content Studio (Conectado directamente a Oracle Cloud)
+CommunityLab AI - Vista: Content Studio (Human-in-the-Loop conectado a OCI)
 """
 import streamlit as st
 from src.ui.components.post_editor import render_linkedin_editor
@@ -12,7 +12,7 @@ def render_studio_view():
     st.markdown('<div class="saas-title">Content Studio — Human-in-the-Loop</div>', unsafe_allow_html=True)
     st.markdown('<div class="saas-subtitle">Supervisión, ajuste editorial multiformato y aprobación previa a OCI.</div>', unsafe_allow_html=True)
 
-    # 1. Leer oportunidades reales persistidas en Oracle Cloud
+    # 1. Recuperar todas las oportunidades históricas registradas en Oracle Cloud
     oportunidades_oci = get_high_value_opportunities(min_score=0.70)
 
     if not oportunidades_oci:
@@ -21,7 +21,6 @@ def render_studio_view():
 
     st.success(f"Se recuperaron **{len(oportunidades_oci)}** oportunidades de alto impacto directamente desde Oracle Cloud.")
 
-    # Selector con todas las oportunidades históricas de la BD
     options = [
         f"{msg.message_id} | {msg.author_anon} ({msg.opportunity_type} - Score {msg.opportunity_score:.2f})"
         for msg in oportunidades_oci
@@ -29,16 +28,13 @@ def render_studio_view():
     selected_idx = st.selectbox("Selecciona una oportunidad para curar:", range(len(options)), format_func=lambda x: options[x])
     msg_seleccionado = oportunidades_oci[selected_idx]
 
-    # Convertir tipo a Enum seguro
     try:
         op_enum = OpportunityType(msg_seleccionado.opportunity_type)
     except Exception:
         op_enum = OpportunityType.SUCCESS_STORY if msg_seleccionado.opportunity_score >= 0.90 else OpportunityType.FAQ
 
-    # Estado del activo en memoria de sesión
     cache_key = f"assets_{msg_seleccionado.message_id}"
     if cache_key not in st.session_state:
-        # Generar activo inicial para la oportunidad seleccionada
         st.session_state[cache_key] = generate_content_assets(
             clean_text=msg_seleccionado.clean_text,
             author=msg_seleccionado.author_anon,

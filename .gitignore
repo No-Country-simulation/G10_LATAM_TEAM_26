@@ -1,19 +1,33 @@
-# Secretos — NUNCA subir
-.env
-
-# Python
+# Python / Entorno virtual
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
 .venv/
 venv/
+ENV/
+env/
 
-# Datos capturados (crudos, pueden contener PII sin anonimizar)
-data/raw/
+# Secretos y credenciales (REGLA DE ORO DE SEGURIDAD)
+.env
+.env.*
+*.pem
+*.key
+oci_api_key.pem
 
-# IDE / SO
-.vscode/
-.idea/
-Thumbs.db
-.DS_Store
+# Credenciales de Oracle Cloud Database (mTLS Wallet)
 *.zip
 data/*.zip
+data/wallet/
+data/Wallet_*/
+
+# Logs y caches
+*.log
+logs/
+.pytest_cache/
+
+# Archivos de datos crudos locales
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/communitylab.db

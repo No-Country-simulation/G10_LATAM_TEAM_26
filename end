@@ -1,0 +1,24 @@
+[33mf245df1[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m feat: imagenes de las publicaciones generadas en segundo plano (Pollinations)
+[33mfb258b4[m perf: lote adaptativo en la clasificacion, reparto de modelos en la redaccion y lotes de 6 piezas
+[33m4c8aea8[m Merge pull request #5 from No-Country-simulation/fix/overview-tipo-declarado
+[33m2765ffa[m fix: el Overview ya no falla con mensajes sin tipo_declarado (opcional en el Formato A)
+[33mb179ba2[m Merge pull request #4 from No-Country-simulation/docs/spec-al-dia
+[33m1bd8544[m docs: spec y fixtures alineados con el motor actual (rev. 25/09, sigue 1.0)
+[33mb8191ec[m Merge pull request #3 from No-Country-simulation/refactor/motor-en-src
+[33mcb0c6cc[m docs: README general del proyecto (funcionalidades, arquitectura e instalacion)
+[33m8f39c0f[m feat: taxonomia en ingles, FEEDBACK, salud de la comunidad y clasificacion mas rapida
+[33m2ab2ae2[m Merge pull request #2 from No-Country-simulation/refactor/motor-en-src
+[33meffcb34[m chore: elimina orquestacion/motor_contenido.py, reemplazado por el motor en src/
+[33m4afc0b2[m Merge remote-tracking branch 'origin/main' into refactor/motor-en-src
+[33mce5e980[m Merge pull request #1 from No-Country-simulation/feature/motor-contenido
+[33mf536275[m feat: prompts de redaccion por formato con estilo propio de cada plataforma
+[33mbecf492[m feat: clasificacion compacta en una llamada por lote (por defecto)
+[33ma437eb3[m feat: clasificacion primero y redaccion en segundo plano en el panel
+[33mb599ba6[m refactor: integra el motor LangGraph en la estructura src/ y conecta el panel al Formato B
+[33m013012e[m merge: integra feature/clean-architecture-ui (arquitectura por capas, Docker y panel Streamlit)
+[33mb9557c2[m Update README.md
+[33ma048c23[m Sube el umbral de FAQ de 0.65 a 0.70 tras prueba con lote de 30 mensajes
+[33m468ac35[m feat: few-shot en el prompt del estratega (calidad de redaccion medida)
+[33m829a330[m feat: motor de contenido con grafo LangGraph (analisis, deteccion y redaccion)
+[33m96baa77[m docs: Formato B con origen autocontenido y tendencias; tipo_declarado opcional
+[33maa016ee[m docs: asignar roles de integrantes por etapa del flujo

@@ -1,13 +1,26 @@
-discord.py>=2.4
-python-dotenv>=1.0
-pydantic>=2.7
-streamlit>=1.38
-langgraph>=0.2
-langchain-google-genai>=2.0
-google-generativeai>=0.8
-oci>=2.129
-oracledb>=2.2.0
-bcrypt>=4.1
-sqlalchemy>=2.0.30
-pytest>=8.0.0
+# ─── Interfaz y Aplicación Web ──────────────────────────────
+streamlit>=1.38.0
 
+# ─── Contratos de Datos y Validación ────────────────────────
+pydantic>=2.7.0
+python-dotenv>=1.0.1
+requests>=2.31.0
+
+# ─── Ingesta y Redes ────────────────────────────────────────
+discord.py>=2.4.0
+
+# ─── Motor de Inteligencia Artificial (Gemini / Groq) ───────
+google-generativeai>=0.8.0
+langchain-core>=0.3.0
+langchain-google-genai>=2.0.0
+langchain-groq>=0.2.0
+langgraph>=0.2.0
+
+# ─── Persistencia y Nube (Oracle Cloud Infrastructure) ──────
+oci>=2.129.0
+sqlalchemy>=2.0.30
+oracledb>=2.2.0
+bcrypt>=4.1.0
+
+# ─── Pruebas y Calidad de Código ────────────────────────────
+pytest>=8.0.0

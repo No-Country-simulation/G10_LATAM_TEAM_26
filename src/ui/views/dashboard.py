@@ -4,6 +4,7 @@ CommunityLab AI - Vista: Overview & Métricas
 import streamlit as st
 from src.ui.components.cards import render_kpi_card, render_interaction_card
 from src.domain.schemas import BatchInputPayload
+from src.ui.components.salud import render_salud_comunidad
 
 
 def render_dashboard_view(dataset: BatchInputPayload | None):
@@ -26,6 +27,14 @@ def render_dashboard_view(dataset: BatchInputPayload | None):
     with c4: render_kpi_card("Feedback Programas", feedback, "Oportunidades de Mejora")
 
     st.markdown("<br>", unsafe_allow_html=True)
+    paquete = st.session_state.get("paquete")
+    if paquete:
+        render_salud_comunidad(paquete["resumen_comunidad"], st.session_state.get("procesados", []))
+    else:
+        st.info("📊 La salud y el sentimiento de la comunidad aparecen aquí después de analizar el lote en "
+                "**Detección & Scoring**.")
+
+    st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("#### Feed de Conversaciones Recientes (Datos Normalizados)")
 
     for msg in dataset.interacciones[:6]:
@@ -34,5 +43,5 @@ def render_dashboard_view(dataset: BatchInputPayload | None):
             author=msg.autor,
             channel=msg.channel,
             text=msg.texto,
-            op_type=msg.tipo_declarado
+            op_type=msg.tipo_declarado or "otro"  # opcional en el Formato A; por defecto 'otro' (spec.md)
         )

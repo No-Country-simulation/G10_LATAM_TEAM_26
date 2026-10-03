@@ -1,11 +1,11 @@
 """
 CommunityLab AI - Unit Tests
-Valida la anonimización de PII, esquemas de datos y scoring algorítmico.
+Anonimización de PII y reglas de oportunidad (sin llamadas a la IA).
 """
-import pytest
-from src.utils.sanitizer import anonimizar_texto, anonimizar_autor
-from src.domain.schemas import OpportunityResult, OpportunityType, SemanticAnalysis
-from src.core.agents.detector import detect_opportunity
+from src.core.agents import simulado
+from src.core.agents.detector import es_oportunidad
+from src.utils.sanitizer import anonimizar_autor, anonimizar_texto
+from src.utils.texto import hashtags, pasos_en_lineas
 
 
 def test_anonimizar_autor():
@@ -16,36 +16,60 @@ def test_anonimizar_autor():
 
 
 def test_anonimizar_texto_pii():
-    texto_con_email = "Hola, escríbeme a valeria@correo.com para pasarte el link."
-    limpio = anonimizar_texto(texto_con_email)
+    limpio = anonimizar_texto("Hola, escríbeme a valeria@correo.com para pasarte el link.")
     assert "valeria@correo.com" not in limpio
     assert "[EMAIL_PROTEGIDO]" in limpio
-
-    texto_con_mencion = "Muchas gracias a <@!123456789> por la ayuda."
-    assert "@miembro" in anonimizar_texto(texto_con_mencion)
+    assert "@miembro" in anonimizar_texto("Muchas gracias a <@!123456789> por la ayuda.")
 
 
-def test_scoring_success_story():
-    texto = "¡Conseguí trabajo como Data Analyst Jr gracias al bootcamp!"
-    analysis = SemanticAnalysis(
-        sentiment="positive",
-        topics=["Empleo", "Data"],
-        relevance_score=0.95
-    )
-    resultado = detect_opportunity(texto, "testimonio", analysis, {"reacciones": 10, "respuestas": 5})
-    
-    assert resultado.type == OpportunityType.SUCCESS_STORY
-    assert resultado.opportunity_score >= 0.70
+def test_telefono_completo_se_enmascara():
+    limpio = anonimizar_texto("mi celular es +51 987 654 321, escríbeme")
+    assert "987" not in limpio and "321" not in limpio
+    assert "[TELEFONO_PROTEGIDO]" in limpio
 
 
-def test_scoring_saludo_descartado():
-    texto = "Holaaa a todos, buen día"
-    analysis = SemanticAnalysis(
-        sentiment="neutral",
-        topics=["General"],
-        relevance_score=0.30
-    )
-    resultado = detect_opportunity(texto, "conversacion", analysis, {"reacciones": 0, "respuestas": 0})
-    
-    assert resultado.type == OpportunityType.NONE
-    assert resultado.opportunity_score < 0.70
+def test_cifras_y_anios_no_son_telefonos():
+    texto = "desde 2026 estudio; después de 23 postulaciones lo dejé en 20 minutos"
+    assert anonimizar_texto(texto) == texto
+
+
+def test_umbral_por_tipo():
+    assert es_oportunidad({"type": "SUCCESS_STORY", "score": 0.8})
+    assert not es_oportunidad({"type": "SUCCESS_STORY", "score": 0.79})
+    assert es_oportunidad({"type": "FAQ", "score": 0.7})
+    assert not es_oportunidad({"type": "OPERATIONAL_QUERY", "score": 0.95})
+    assert not es_oportunidad({"type": "NONE", "score": 1.0})
+
+
+def test_hashtags_pegados_se_separan():
+    assert hashtags(["#AnalistaBI#LogroTech", "Python", "#React #NodeJS"]) == \
+        ["#AnalistaBI", "#LogroTech", "#Python", "#React", "#NodeJS"]
+
+
+def test_pasos_numerados_en_lineas_separadas():
+    assert pasos_en_lineas("Sigue estos pasos: 1. Activa el entorno. 2. Instala las dependencias.") == \
+        "Sigue estos pasos:\n1. Activa el entorno.\n2. Instala las dependencias."
+    sin_secuencia = "Usa Python 3. Luego revisa el paso 2. del instalador."
+    assert pasos_en_lineas(sin_secuencia) == sin_secuencia
+
+
+def test_feedback_nunca_genera_contenido():
+    assert not es_oportunidad({"type": "FEEDBACK", "score": 0.99})
+
+
+def test_simulado_detecta_feedback():
+    msg = {"message_id": "MSG-0001", "canal": "general",
+           "texto": "Sugiero que el modulo de APIs tenga mas ejercicios, va muy rapido."}
+    assert simulado.clasificacion(msg)["type"] == "FEEDBACK"
+
+
+def test_lotes_adaptativos_primera_tanda_chica_y_resto_grande(monkeypatch):
+    from src import config
+    from src.utils.texto import lotes_adaptativos
+    monkeypatch.setattr(config, "TAMANO_LOTE", 10)
+    monkeypatch.setattr(config, "TAMANO_LOTE_GRANDE", 25)
+    monkeypatch.setattr(config, "UMBRAL_LOTE_GRANDE", 50)
+    monkeypatch.setattr(config, "MAX_CONCURRENCIA", 3)
+    assert [len(l) for l in lotes_adaptativos(list(range(40)))] == [10, 10, 10, 10]
+    tamanos = [len(l) for l in lotes_adaptativos(list(range(300)))]
+    assert tamanos[:3] == [10, 10, 10] and set(tamanos[3:-1]) == {25} and sum(tamanos) == 300

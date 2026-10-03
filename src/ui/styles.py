@@ -86,6 +86,21 @@ def apply_enterprise_theme():
     .pill-milestone { background: #FAF5FF; color: #7E22CE; border: 1px solid #E9D5FF; }
     .pill-feedback { background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; }
     .pill-neutral { background: #F1F5F9; color: #475569; border: 1px solid #E2E8F0; }
+    .pill-pos { background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; text-transform: none; }
+    .pill-neu { background: #F1F5F9; color: #475569; border: 1px solid #E2E8F0; text-transform: none; }
+    .pill-neg { background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; text-transform: none; }
+
+    /* 5b. SALUD DE LA COMUNIDAD */
+    .salud-estado { font-size: 1.5rem; font-weight: 800; margin: 0.35rem 0 0.2rem; }
+    .salud-leyenda { font-size: 0.82rem; color: #64748B; font-weight: 600; }
+    .salud-barra {
+        display: flex; height: 14px; border-radius: 7px; overflow: hidden;
+        margin-top: 0.5rem; background: rgba(148, 163, 184, 0.2);
+    }
+    .salud-seg { height: 100%; }
+    .salud-positive { background: #10B981; }
+    .salud-neutral { background: #94A3B8; }
+    .salud-negative { background: #EF4444; }
 
     /* 6. SOCIAL CARD LINKEDIN (Fiel a la interfaz real) */
     .linkedin-card {

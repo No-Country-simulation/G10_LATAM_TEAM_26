@@ -3,13 +3,85 @@ CommunityLab AI - Ingestion Loaders
 Transforma archivos estáticos (fixtures) y capturas de Discord (.jsonl)
 en entidades de dominio validadas por Pydantic (BatchInputPayload).
 """
+import csv
 import json
+import re
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from src.domain.schemas import BatchInputPayload, RawMessageInteraction
 from src.utils.logger import setup_logger
 
 logger = setup_logger("ingestion_loaders")
+
+Lote = Tuple[List[Dict[str, Any]], Dict[str, Any]]
+
+
+def interacciones_desde_payload(payload: BatchInputPayload, limite: Optional[int] = None) -> Lote:
+    """Convierte un lote validado (Formato A) en la lista de mensajes que recibe el motor."""
+    interacciones = [{
+        "message_id": m.message_id,
+        "texto": m.texto,
+        "canal": m.channel,
+        "fecha": m.timestamp,
+        "autor": m.autor,
+        "source": m.source,
+        "reacciones": m.metadata.get("reacciones", 0),
+        "respuestas": m.metadata.get("respuestas", 0),
+    } for m in payload.interacciones[:limite]]
+    metadatos = {"origen_comunidad": payload.origen_comunidad, "periodo_referencia": payload.periodo_referencia}
+    return interacciones, metadatos
+
+
+def _limpiar_discord(texto: str) -> str:
+    """Reemplaza menciones de Discord (<@id>, <@&id>, <#id>) para no enviar IDs al LLM."""
+    texto = re.sub(r"<@&\d+>", "@rol", texto)
+    texto = re.sub(r"<@!?\d+>", "@usuario", texto)
+    return re.sub(r"<#\d+>", "#canal", texto).strip()
+
+
+def _normalizar_fila(fila: Dict[str, str], indice: int) -> Dict[str, Any]:
+    if "texto" in fila:  # CSV simple: message_id, texto
+        return {"message_id": fila.get("message_id") or f"csv-{indice:04d}", "texto": (fila["texto"] or "").strip()}
+    # Export de Discord: AuthorID, Author, Date, Content, Attachments, Reactions
+    return {
+        "message_id": f"discord-{indice:04d}",
+        "texto": _limpiar_discord(fila.get("Content") or ""),
+        "fecha": (fila.get("Date") or "")[:19],
+        "autor": fila.get("Author"),
+        "reacciones": sum(int(n) for n in re.findall(r"\((\d+)\)", fila.get("Reactions") or "")),
+    }
+
+
+def cargar_csv(ruta: str) -> Lote:
+    """CSV con columnas message_id/texto o export de Discord; descarta filas sin texto."""
+    with open(ruta, encoding="utf-8-sig", newline="") as f:
+        filas = [_normalizar_fila(fila, i) for i, fila in enumerate(csv.DictReader(f), start=1)]
+    return [fila for fila in filas if fila["texto"]], {}
+
+
+def cargar_json(ruta: str) -> Lote:
+    """Lote JSON (Formato A) con la lista 'interacciones'."""
+    with open(ruta, encoding="utf-8-sig") as f:
+        datos = json.load(f)
+    interacciones = []
+    for i, item in enumerate(datos.get("interacciones", []), start=1):
+        metadata = item.get("metadata") or {}
+        interacciones.append({
+            "message_id": item.get("message_id") or f"json-{i:04d}",
+            "texto": (item.get("texto") or "").strip(),
+            "canal": item.get("channel"),
+            "fecha": item.get("timestamp"),
+            "autor": item.get("autor"),
+            "source": item.get("source", "discord"),
+            "reacciones": metadata.get("reacciones", 0),
+            "respuestas": metadata.get("respuestas", 0),
+        })
+    metadatos = {k: datos[k] for k in ("origen_comunidad", "periodo_referencia") if datos.get(k)}
+    return [m for m in interacciones if m["texto"]], metadatos
+
+
+def cargar_entrada(ruta: str) -> Lote:
+    return cargar_json(ruta) if ruta.lower().endswith(".json") else cargar_csv(ruta)
 
 
 def load_fixture_data(file_path: str = "data/fixtures/lote_ejemplo_formato_a.json") -> Optional[BatchInputPayload]:

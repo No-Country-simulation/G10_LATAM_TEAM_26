@@ -4,153 +4,153 @@
   "procesados": [
     {
       "tracking": { "message_id": "MSG-0001", "source": "discord", "channel": "logros-y-empleos", "timestamp": "2026-09-14T14:22:00Z" },
-      "analysis": { "sentiment": "positive", "topics": ["empleo", "data_analysis", "langchain", "oci"], "intent": "compartir_logro", "relevance_score": 0.95 },
+      "analysis": { "sentiment": "positive", "topics": ["empleo", "data_analysis", "langchain", "oci"], "intent": "compartir_logro", "relevance_score": 0.94 },
       "opportunity": { "opportunity_id": "OPP-001", "type": "SUCCESS_STORY", "opportunity_score": 0.94, "reason": "La usuaria reporta su contratación como Data Analyst Jr destacando el proyecto del bootcamp como factor decisivo." }
     },
     {
       "tracking": { "message_id": "MSG-0002", "source": "discord", "channel": "dudas-langgraph", "timestamp": "2026-09-14T15:03:00Z" },
-      "analysis": { "sentiment": "neutral", "topics": ["langgraph", "nodos_condicionales", "retry"], "intent": "pedir_ayuda", "relevance_score": 0.80 },
+      "analysis": { "sentiment": "neutral", "topics": ["langgraph", "nodos_condicionales", "retry"], "intent": "pedir_ayuda", "relevance_score": 0.82 },
       "opportunity": { "opportunity_id": "OPP-002", "type": "FAQ", "opportunity_score": 0.82, "reason": "Duda técnica específica y reutilizable sobre routers con reintento en LangGraph, con buena participación del canal." }
     },
     {
       "tracking": { "message_id": "MSG-0003", "source": "discord", "channel": "logros-y-empleos", "timestamp": "2026-09-14T14:35:00Z" },
-      "analysis": { "sentiment": "positive", "topics": ["felicitaciones"], "intent": "reaccionar", "relevance_score": 0.20 },
-      "opportunity": { "opportunity_id": "OPP-003", "type": "NONE", "opportunity_score": 0.15, "reason": "Reacción social sin contenido propio; el valor ya está capturado en el mensaje original." }
+      "analysis": { "sentiment": "positive", "topics": ["felicitaciones"], "intent": "reaccionar", "relevance_score": 0.15 },
+      "opportunity": { "opportunity_id": null, "type": "NONE", "opportunity_score": 0.15, "reason": "Reacción social sin contenido propio; el valor ya está capturado en el mensaje original." }
     },
     {
       "tracking": { "message_id": "MSG-0004", "source": "discord", "channel": "dudas-tecnicas", "timestamp": "2026-09-14T16:40:00Z" },
-      "analysis": { "sentiment": "negative", "topics": ["oci", "object_storage", "error_403"], "intent": "pedir_ayuda", "relevance_score": 0.75 },
-      "opportunity": { "opportunity_id": "OPP-004", "type": "FAQ", "opportunity_score": 0.78, "reason": "Error frecuente de permisos en OCI Object Storage; candidato a guía de troubleshooting. Parte de un patrón de consultas sobre OCI esta semana." }
+      "analysis": { "sentiment": "negative", "topics": ["oci", "object_storage", "error_403"], "intent": "pedir_ayuda", "relevance_score": 0.78 },
+      "opportunity": { "opportunity_id": "OPP-003", "type": "FAQ", "opportunity_score": 0.78, "reason": "Error frecuente de permisos en OCI Object Storage; candidato a guía de troubleshooting. Parte de un patrón de consultas sobre OCI esta semana." }
     },
     {
       "tracking": { "message_id": "MSG-0005", "source": "form", "channel": "feedback-cursos", "timestamp": "2026-09-14T18:10:00Z" },
-      "analysis": { "sentiment": "positive", "topics": ["prompts", "few_shot", "contenido_curso"], "intent": "dar_feedback", "relevance_score": 0.70 },
-      "opportunity": { "opportunity_id": "OPP-005", "type": "FEEDBACK", "opportunity_score": 0.72, "reason": "Feedback positivo con aplicación laboral concreta; útil como cita para material promocional del módulo." }
+      "analysis": { "sentiment": "positive", "topics": ["prompts", "few_shot", "contenido_curso"], "intent": "dar_feedback", "relevance_score": 0.1 },
+      "opportunity": { "opportunity_id": null, "type": "FEEDBACK", "opportunity_score": 0.1, "reason": "Feedback positivo con aplicación laboral concreta; útil como cita para material promocional del módulo." }
     },
     {
       "tracking": { "message_id": "MSG-0006", "source": "form", "channel": "feedback-cursos", "timestamp": "2026-09-14T19:25:00Z" },
-      "analysis": { "sentiment": "negative", "topics": ["contenido_curso", "oci", "material_desactualizado"], "intent": "dar_feedback", "relevance_score": 0.62 },
-      "opportunity": { "opportunity_id": "OPP-006", "type": "FEEDBACK", "opportunity_score": 0.66, "reason": "Señalamiento accionable de material desactualizado; relevante para el equipo académico, no para marketing." }
+      "analysis": { "sentiment": "negative", "topics": ["contenido_curso", "oci", "material_desactualizado"], "intent": "dar_feedback", "relevance_score": 0.1 },
+      "opportunity": { "opportunity_id": null, "type": "FEEDBACK", "opportunity_score": 0.1, "reason": "Señalamiento accionable de material desactualizado; relevante para el equipo académico, no para marketing." }
     },
     {
       "tracking": { "message_id": "MSG-0007", "source": "discord", "channel": "proyectos", "timestamp": "2026-09-15T09:12:00Z" },
-      "analysis": { "sentiment": "positive", "topics": ["open_source", "github", "analisis_sentimiento"], "intent": "compartir_logro", "relevance_score": 0.86 },
-      "opportunity": { "opportunity_id": "OPP-007", "type": "MILESTONE", "opportunity_score": 0.88, "reason": "Hito comunitario destacado: proyecto estudiantil open source con tracción internacional (100 estrellas, contribuidores de 4 países)." }
+      "analysis": { "sentiment": "positive", "topics": ["open_source", "github", "analisis_sentimiento"], "intent": "compartir_logro", "relevance_score": 0.88 },
+      "opportunity": { "opportunity_id": "OPP-004", "type": "MILESTONE", "opportunity_score": 0.88, "reason": "Hito comunitario destacado: proyecto estudiantil open source con tracción internacional (100 estrellas, contribuidores de 4 países)." }
     },
     {
       "tracking": { "message_id": "MSG-0008", "source": "discord", "channel": "dudas-tecnicas", "timestamp": "2026-09-15T10:30:00Z" },
-      "analysis": { "sentiment": "neutral", "topics": ["prompts", "few_shot", "tokens"], "intent": "pedir_ayuda", "relevance_score": 0.72 },
-      "opportunity": { "opportunity_id": "OPP-008", "type": "FAQ", "opportunity_score": 0.75, "reason": "Pregunta práctica y generalizable sobre cantidad óptima de ejemplos few-shot; buen candidato a tip de la semana." }
+      "analysis": { "sentiment": "neutral", "topics": ["prompts", "few_shot", "tokens"], "intent": "pedir_ayuda", "relevance_score": 0.75 },
+      "opportunity": { "opportunity_id": "OPP-005", "type": "FAQ", "opportunity_score": 0.75, "reason": "Pregunta práctica y generalizable sobre cantidad óptima de ejemplos few-shot; buen candidato a tip de la semana." }
     },
     {
       "tracking": { "message_id": "MSG-0009", "source": "discord", "channel": "logros-y-empleos", "timestamp": "2026-09-15T11:45:00Z" },
-      "analysis": { "sentiment": "positive", "topics": ["freelance", "n8n", "automatizacion", "empleo"], "intent": "compartir_logro", "relevance_score": 0.89 },
-      "opportunity": { "opportunity_id": "OPP-009", "type": "SUCCESS_STORY", "opportunity_score": 0.91, "reason": "Primer cliente freelance aplicando contenidos del módulo de automatización; historia con arco claro (estudiante a facturar en 3 meses)." }
+      "analysis": { "sentiment": "positive", "topics": ["freelance", "n8n", "automatizacion", "empleo"], "intent": "compartir_logro", "relevance_score": 0.91 },
+      "opportunity": { "opportunity_id": "OPP-006", "type": "SUCCESS_STORY", "opportunity_score": 0.91, "reason": "Primer cliente freelance aplicando contenidos del módulo de automatización; historia con arco claro (estudiante a facturar en 3 meses)." }
     },
     {
       "tracking": { "message_id": "MSG-0010", "source": "discord", "channel": "general", "timestamp": "2026-09-15T12:20:00Z" },
-      "analysis": { "sentiment": "neutral", "topics": ["grupo_estudio", "networking"], "intent": "coordinar", "relevance_score": 0.32 },
-      "opportunity": { "opportunity_id": "OPP-010", "type": "NONE", "opportunity_score": 0.30, "reason": "Coordinación logística entre miembros; valiosa para la comunidad pero sin potencial de activo de contenido." }
+      "analysis": { "sentiment": "neutral", "topics": ["grupo_estudio", "networking"], "intent": "coordinar", "relevance_score": 0.3 },
+      "opportunity": { "opportunity_id": null, "type": "NONE", "opportunity_score": 0.3, "reason": "Coordinación logística entre miembros; valiosa para la comunidad pero sin potencial de activo de contenido." }
     },
     {
       "tracking": { "message_id": "MSG-0011", "source": "discord", "channel": "dudas-tecnicas", "timestamp": "2026-09-15T14:05:00Z" },
-      "analysis": { "sentiment": "neutral", "topics": ["oci", "always_free", "limites"], "intent": "pedir_ayuda", "relevance_score": 0.77 },
-      "opportunity": { "opportunity_id": "OPP-011", "type": "FAQ", "opportunity_score": 0.80, "reason": "Consulta recurrente sobre límites de la capa Always Free; relevante para toda la cohorte de la hackathon. Parte del patrón de consultas OCI." }
+      "analysis": { "sentiment": "neutral", "topics": ["oci", "always_free", "limites"], "intent": "pedir_ayuda", "relevance_score": 0.8 },
+      "opportunity": { "opportunity_id": "OPP-007", "type": "FAQ", "opportunity_score": 0.8, "reason": "Consulta recurrente sobre límites de la capa Always Free; relevante para toda la cohorte de la hackathon. Parte del patrón de consultas OCI." }
     },
     {
       "tracking": { "message_id": "MSG-0012", "source": "discord", "channel": "dudas-tecnicas", "timestamp": "2026-09-15T15:33:00Z" },
-      "analysis": { "sentiment": "negative", "topics": ["streamlit", "instalacion", "python"], "intent": "pedir_ayuda", "relevance_score": 0.58 },
-      "opportunity": { "opportunity_id": "OPP-012", "type": "FAQ", "opportunity_score": 0.65, "reason": "Error de entorno común pero muy básico y dependiente del setup individual; bajo valor como contenido reutilizable." }
+      "analysis": { "sentiment": "negative", "topics": ["streamlit", "instalacion", "python"], "intent": "pedir_ayuda", "relevance_score": 0.65 },
+      "opportunity": { "opportunity_id": null, "type": "FAQ", "opportunity_score": 0.65, "reason": "Error de entorno común pero muy básico y dependiente del setup individual; bajo valor como contenido reutilizable." }
     },
     {
       "tracking": { "message_id": "MSG-0013", "source": "discord", "channel": "logros-y-empleos", "timestamp": "2026-09-15T17:50:00Z" },
-      "analysis": { "sentiment": "positive", "topics": ["entrevista", "mock_interviews", "empleo"], "intent": "compartir_logro", "relevance_score": 0.82 },
-      "opportunity": { "opportunity_id": "OPP-013", "type": "SUCCESS_STORY", "opportunity_score": 0.85, "reason": "Entrevista técnica aprobada atribuida a las mock interviews comunitarias; destaca el valor de la comunidad misma." }
+      "analysis": { "sentiment": "positive", "topics": ["entrevista", "mock_interviews", "empleo"], "intent": "compartir_logro", "relevance_score": 0.85 },
+      "opportunity": { "opportunity_id": "OPP-008", "type": "SUCCESS_STORY", "opportunity_score": 0.85, "reason": "Entrevista técnica aprobada atribuida a las mock interviews comunitarias; destaca el valor de la comunidad misma." }
     },
     {
       "tracking": { "message_id": "MSG-0014", "source": "form", "channel": "feedback-cursos", "timestamp": "2026-09-15T20:15:00Z" },
-      "analysis": { "sentiment": "positive", "topics": ["mentoria", "agentes", "metodologia"], "intent": "dar_feedback", "relevance_score": 0.71 },
-      "opportunity": { "opportunity_id": "OPP-014", "type": "FEEDBACK", "opportunity_score": 0.74, "reason": "Feedback positivo específico sobre metodología de mentoría en vivo; cita utilizable y señal para replicar el formato." }
+      "analysis": { "sentiment": "positive", "topics": ["mentoria", "agentes", "metodologia"], "intent": "dar_feedback", "relevance_score": 0.1 },
+      "opportunity": { "opportunity_id": null, "type": "FEEDBACK", "opportunity_score": 0.1, "reason": "Feedback positivo específico sobre metodología de mentoría en vivo; cita utilizable y señal para replicar el formato." }
     },
     {
       "tracking": { "message_id": "MSG-0015", "source": "discord", "channel": "general", "timestamp": "2026-09-16T08:45:00Z" },
-      "analysis": { "sentiment": "positive", "topics": ["humor", "langgraph"], "intent": "socializar", "relevance_score": 0.18 },
-      "opportunity": { "opportunity_id": "OPP-015", "type": "NONE", "opportunity_score": 0.10, "reason": "Humor comunitario; aporta a la cultura del canal pero no es materia prima de contenido." }
+      "analysis": { "sentiment": "positive", "topics": ["humor", "langgraph"], "intent": "socializar", "relevance_score": 0.1 },
+      "opportunity": { "opportunity_id": null, "type": "NONE", "opportunity_score": 0.1, "reason": "Humor comunitario; aporta a la cultura del canal pero no es materia prima de contenido." }
     },
     {
       "tracking": { "message_id": "MSG-0016", "source": "discord", "channel": "dudas-tecnicas", "timestamp": "2026-09-16T09:30:00Z" },
-      "analysis": { "sentiment": "negative", "topics": ["oci", "api_keys", "sdk_python", "configuracion"], "intent": "pedir_ayuda", "relevance_score": 0.76 },
-      "opportunity": { "opportunity_id": "OPP-016", "type": "FAQ", "opportunity_score": 0.79, "reason": "Fricción documentada en la configuración inicial del SDK de OCI; candidata a guía paso a paso. Parte del patrón de consultas OCI." }
+      "analysis": { "sentiment": "negative", "topics": ["oci", "api_keys", "sdk_python", "configuracion"], "intent": "pedir_ayuda", "relevance_score": 0.79 },
+      "opportunity": { "opportunity_id": "OPP-009", "type": "FAQ", "opportunity_score": 0.79, "reason": "Fricción documentada en la configuración inicial del SDK de OCI; candidata a guía paso a paso. Parte del patrón de consultas OCI." }
     },
     {
       "tracking": { "message_id": "MSG-0017", "source": "discord", "channel": "logros-y-empleos", "timestamp": "2026-09-16T11:00:00Z" },
-      "analysis": { "sentiment": "positive", "topics": ["certificacion", "oci", "estudio"], "intent": "compartir_logro", "relevance_score": 0.73 },
-      "opportunity": { "opportunity_id": "OPP-017", "type": "MILESTONE", "opportunity_score": 0.76, "reason": "Certificación OCI aprobada usando recursos de la comunidad; el autor se ofrece a ayudar, potencial tip de estudio." }
+      "analysis": { "sentiment": "positive", "topics": ["certificacion", "oci", "estudio"], "intent": "compartir_logro", "relevance_score": 0.76 },
+      "opportunity": { "opportunity_id": null, "type": "MILESTONE", "opportunity_score": 0.76, "reason": "Certificación OCI aprobada usando recursos de la comunidad; el autor se ofrece a ayudar, potencial tip de estudio." }
     },
     {
       "tracking": { "message_id": "MSG-0018", "source": "discord", "channel": "general", "timestamp": "2026-09-16T12:40:00Z" },
-      "analysis": { "sentiment": "negative", "topics": ["soporte", "tiempo_respuesta"], "intent": "quejarse", "relevance_score": 0.60 },
-      "opportunity": { "opportunity_id": "OPP-018", "type": "FEEDBACK", "opportunity_score": 0.66, "reason": "Queja legítima sobre tiempos de respuesta del soporte; alerta operativa para administradores, no genera activo público." }
+      "analysis": { "sentiment": "negative", "topics": ["soporte", "tiempo_respuesta"], "intent": "quejarse", "relevance_score": 0.1 },
+      "opportunity": { "opportunity_id": null, "type": "FEEDBACK", "opportunity_score": 0.1, "reason": "Queja legítima sobre tiempos de respuesta del soporte; alerta operativa para administradores, no genera activo público." }
     },
     {
       "tracking": { "message_id": "MSG-0019", "source": "discord", "channel": "dudas-tecnicas", "timestamp": "2026-09-16T14:15:00Z" },
-      "analysis": { "sentiment": "neutral", "topics": ["n8n", "webhook", "polling", "arquitectura"], "intent": "pedir_ayuda", "relevance_score": 0.70 },
-      "opportunity": { "opportunity_id": "OPP-019", "type": "FAQ", "opportunity_score": 0.73, "reason": "Pregunta de diseño con criterios comparables (webhook vs polling); útil como mini-guía de decisión técnica." }
+      "analysis": { "sentiment": "neutral", "topics": ["n8n", "webhook", "polling", "arquitectura"], "intent": "pedir_ayuda", "relevance_score": 0.73 },
+      "opportunity": { "opportunity_id": "OPP-010", "type": "FAQ", "opportunity_score": 0.73, "reason": "Pregunta de diseño con criterios comparables (webhook vs polling); útil como mini-guía de decisión técnica." }
     },
     {
       "tracking": { "message_id": "MSG-0020", "source": "discord", "channel": "logros-y-empleos", "timestamp": "2026-09-16T16:30:00Z" },
-      "analysis": { "sentiment": "positive", "topics": ["ascenso", "automatizacion", "cambio_carrera", "impacto_laboral"], "intent": "compartir_logro", "relevance_score": 0.93 },
-      "opportunity": { "opportunity_id": "OPP-020", "type": "SUCCESS_STORY", "opportunity_score": 0.92, "reason": "Ascenso con métrica de impacto concreta (20 horas semanales ahorradas) y arco narrativo fuerte: de asistente administrativa a analista de automatización en un año." }
+      "analysis": { "sentiment": "positive", "topics": ["ascenso", "automatizacion", "cambio_carrera", "impacto_laboral"], "intent": "compartir_logro", "relevance_score": 0.92 },
+      "opportunity": { "opportunity_id": "OPP-011", "type": "SUCCESS_STORY", "opportunity_score": 0.92, "reason": "Ascenso con métrica de impacto concreta (20 horas semanales ahorradas) y arco narrativo fuerte: de asistente administrativa a analista de automatización en un año." }
     },
     {
       "tracking": { "message_id": "MSG-0021", "source": "discord", "channel": "general", "timestamp": "2026-09-16T18:05:00Z" },
-      "analysis": { "sentiment": "neutral", "topics": ["hardware", "recomendaciones"], "intent": "pedir_ayuda", "relevance_score": 0.28 },
-      "opportunity": { "opportunity_id": "OPP-021", "type": "NONE", "opportunity_score": 0.25, "reason": "Consulta de equipamiento personal, fuera del alcance temático del programa." }
+      "analysis": { "sentiment": "neutral", "topics": ["hardware", "recomendaciones"], "intent": "pedir_ayuda", "relevance_score": 0.25 },
+      "opportunity": { "opportunity_id": null, "type": "NONE", "opportunity_score": 0.25, "reason": "Consulta de equipamiento personal, fuera del alcance temático del programa." }
     },
     {
       "tracking": { "message_id": "MSG-0022", "source": "discord", "channel": "dudas-tecnicas", "timestamp": "2026-09-16T19:50:00Z" },
-      "analysis": { "sentiment": "neutral", "topics": ["oci", "object_storage", "sdk_python", "put_object"], "intent": "pedir_ayuda", "relevance_score": 0.78 },
-      "opportunity": { "opportunity_id": "OPP-022", "type": "FAQ", "opportunity_score": 0.81, "reason": "Pedido de snippet funcional para put_object en OCI; alto valor práctico inmediato para la cohorte de la hackathon. Parte del patrón de consultas OCI." }
+      "analysis": { "sentiment": "neutral", "topics": ["oci", "object_storage", "sdk_python", "put_object"], "intent": "pedir_ayuda", "relevance_score": 0.81 },
+      "opportunity": { "opportunity_id": "OPP-012", "type": "FAQ", "opportunity_score": 0.81, "reason": "Pedido de snippet funcional para put_object en OCI; alto valor práctico inmediato para la cohorte de la hackathon. Parte del patrón de consultas OCI." }
     },
     {
       "tracking": { "message_id": "MSG-0023", "source": "form", "channel": "feedback-cursos", "timestamp": "2026-09-17T09:20:00Z" },
-      "analysis": { "sentiment": "positive", "topics": ["proyecto_final", "evaluacion"], "intent": "dar_feedback", "relevance_score": 0.66 },
-      "opportunity": { "opportunity_id": "OPP-023", "type": "FEEDBACK", "opportunity_score": 0.70, "reason": "Feedback constructivo con sugerencia accionable (checklist de autoevaluación); valor mixto académico y testimonial." }
+      "analysis": { "sentiment": "positive", "topics": ["proyecto_final", "evaluacion"], "intent": "dar_feedback", "relevance_score": 0.1 },
+      "opportunity": { "opportunity_id": null, "type": "FEEDBACK", "opportunity_score": 0.1, "reason": "Feedback constructivo con sugerencia accionable (checklist de autoevaluación); valor mixto académico y testimonial." }
     },
     {
       "tracking": { "message_id": "MSG-0024", "source": "discord", "channel": "dudas-tecnicas", "timestamp": "2026-09-17T10:45:00Z" },
-      "analysis": { "sentiment": "neutral", "topics": ["llm", "temperature", "top_p", "generacion"], "intent": "pedir_ayuda", "relevance_score": 0.74 },
-      "opportunity": { "opportunity_id": "OPP-024", "type": "FAQ", "opportunity_score": 0.77, "reason": "Concepto fundamental de LLMs explicado en contexto práctico (copys menos robóticos); excelente candidato a contenido educativo breve." }
+      "analysis": { "sentiment": "neutral", "topics": ["llm", "temperature", "top_p", "generacion"], "intent": "pedir_ayuda", "relevance_score": 0.77 },
+      "opportunity": { "opportunity_id": "OPP-013", "type": "FAQ", "opportunity_score": 0.77, "reason": "Concepto fundamental de LLMs explicado en contexto práctico (copys menos robóticos); excelente candidato a contenido educativo breve." }
     },
     {
       "tracking": { "message_id": "MSG-0025", "source": "discord", "channel": "general", "timestamp": "2026-09-17T08:00:00Z" },
-      "analysis": { "sentiment": "positive", "topics": ["saludo"], "intent": "socializar", "relevance_score": 0.08 },
-      "opportunity": { "opportunity_id": "OPP-025", "type": "NONE", "opportunity_score": 0.05, "reason": "Saludo sin contenido informativo." }
+      "analysis": { "sentiment": "positive", "topics": ["saludo"], "intent": "socializar", "relevance_score": 0.05 },
+      "opportunity": { "opportunity_id": null, "type": "NONE", "opportunity_score": 0.05, "reason": "Saludo sin contenido informativo." }
     },
     {
       "tracking": { "message_id": "MSG-0026", "source": "discord", "channel": "proyectos", "timestamp": "2026-09-17T13:30:00Z" },
-      "analysis": { "sentiment": "positive", "topics": ["hackathon", "chatbot", "rag", "reconocimiento"], "intent": "compartir_logro", "relevance_score": 0.84 },
-      "opportunity": { "opportunity_id": "OPP-026", "type": "MILESTONE", "opportunity_score": 0.83, "reason": "Equipo estudiantil gana hackathon universitaria con proyecto nacido en el programa; reconocimiento externo verificable." }
+      "analysis": { "sentiment": "positive", "topics": ["hackathon", "chatbot", "rag", "reconocimiento"], "intent": "compartir_logro", "relevance_score": 0.83 },
+      "opportunity": { "opportunity_id": "OPP-014", "type": "MILESTONE", "opportunity_score": 0.83, "reason": "Equipo estudiantil gana hackathon universitaria con proyecto nacido en el programa; reconocimiento externo verificable." }
     },
     {
       "tracking": { "message_id": "MSG-0027", "source": "discord", "channel": "dudas-tecnicas", "timestamp": "2026-09-17T15:10:00Z" },
-      "analysis": { "sentiment": "neutral", "topics": ["portfolio", "empleabilidad", "github"], "intent": "pedir_ayuda", "relevance_score": 0.72 },
-      "opportunity": { "opportunity_id": "OPP-027", "type": "FAQ", "opportunity_score": 0.74, "reason": "Pregunta de empleabilidad de interés masivo; puede nutrirse con la experiencia de los miembros ya contratados." }
+      "analysis": { "sentiment": "neutral", "topics": ["portfolio", "empleabilidad", "github"], "intent": "pedir_ayuda", "relevance_score": 0.74 },
+      "opportunity": { "opportunity_id": "OPP-015", "type": "FAQ", "opportunity_score": 0.74, "reason": "Pregunta de empleabilidad de interés masivo; puede nutrirse con la experiencia de los miembros ya contratados." }
     },
     {
       "tracking": { "message_id": "MSG-0028", "source": "discord", "channel": "logros-y-empleos", "timestamp": "2026-09-17T21:40:00Z" },
-      "analysis": { "sentiment": "positive", "topics": ["cambio_carrera", "empleo", "inspiracion", "primer_contrato"], "intent": "compartir_logro", "relevance_score": 0.96 },
-      "opportunity": { "opportunity_id": "OPP-028", "type": "SUCCESS_STORY", "opportunity_score": 0.93, "reason": "Historia de reconversión profesional a los 42 años con primer contrato firmado; máxima resonancia emocional y engagement récord del período (84 reacciones)." }
+      "analysis": { "sentiment": "positive", "topics": ["cambio_carrera", "empleo", "inspiracion", "primer_contrato"], "intent": "compartir_logro", "relevance_score": 0.93 },
+      "opportunity": { "opportunity_id": "OPP-016", "type": "SUCCESS_STORY", "opportunity_score": 0.93, "reason": "Historia de reconversión profesional a los 42 años con primer contrato firmado; máxima resonancia emocional y engagement récord del período (84 reacciones)." }
     },
     {
       "tracking": { "message_id": "MSG-0029", "source": "discord", "channel": "dudas-tecnicas", "timestamp": "2026-09-18T09:55:00Z" },
-      "analysis": { "sentiment": "negative", "topics": ["oci", "sdk_python", "error_401", "autenticacion"], "intent": "pedir_ayuda", "relevance_score": 0.75 },
-      "opportunity": { "opportunity_id": "OPP-029", "type": "TREND", "opportunity_score": 0.78, "reason": "Quinta consulta sobre configuración/autenticación de OCI en la semana (MSG-0004, 0011, 0016, 0022, 0029): patrón que amerita guía consolidada y aviso a mentores." }
+      "analysis": { "sentiment": "negative", "topics": ["oci", "sdk_python", "error_401", "autenticacion"], "intent": "pedir_ayuda", "relevance_score": 0.78 },
+      "opportunity": { "opportunity_id": "OPP-017", "type": "FAQ", "opportunity_score": 0.78, "reason": "Duda técnica con contexto sobre la autenticación del SDK de OCI; varios miembros reportan el mismo problema esta semana." }
     },
     {
       "tracking": { "message_id": "MSG-0030", "source": "discord", "channel": "general", "timestamp": "2026-09-18T11:25:00Z" },
-      "analysis": { "sentiment": "positive", "topics": ["agradecimiento", "mentores", "comunidad"], "intent": "agradecer", "relevance_score": 0.52 },
-      "opportunity": { "opportunity_id": "OPP-030", "type": "FEEDBACK", "opportunity_score": 0.55, "reason": "Agradecimiento colectivo genuino; refuerza clima comunitario pero sin historia específica que convertir en activo." }
+      "analysis": { "sentiment": "positive", "topics": ["agradecimiento", "mentores", "comunidad"], "intent": "agradecer", "relevance_score": 0.1 },
+      "opportunity": { "opportunity_id": null, "type": "FEEDBACK", "opportunity_score": 0.1, "reason": "Agradecimiento colectivo genuino; refuerza clima comunitario pero sin historia específica que convertir en activo." }
     }
   ]
 }
