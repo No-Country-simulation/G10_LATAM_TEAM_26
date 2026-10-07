@@ -1,13 +1,14 @@
 """
 CommunityLab AI - Router Principal
-Coordina autenticación, layout global y enrutamiento hacia vistas desacopladas.
+Coordina autenticación (usuarios de la base de la comunidad), layout global y enrutamiento hacia las vistas.
 """
 import os
 import streamlit as st
 from dotenv import load_dotenv
 
 from src.ui.styles import apply_enterprise_theme
-from src.adapters.ingestion.loaders import load_fixture_data, load_discord_raw_stream
+from src.adapters.db import repository
+from src.adapters.ingestion.loaders import load_discord_raw_stream, load_fixture_data, load_uploaded_json_file
 from src.ui.views.dashboard import render_dashboard_view
 from src.ui.views.explorer import render_explorer_view
 from src.ui.views.studio import render_studio_view
@@ -23,6 +24,28 @@ st.set_page_config(
 )
 
 apply_enterprise_theme()
+
+
+@st.cache_resource
+def iniciar_base() -> str:
+    """Crea las tablas (OCI Autonomous Database o SQLite local) una vez por proceso. Devuelve el error, si hubo."""
+    try:
+        repository.init_db()
+        return ""
+    except Exception as error:
+        return f"{type(error).__name__}: {str(error)[:160]}"
+
+
+def autenticar(usuario: str, clave: str):
+    """(nombre, rol) si las credenciales son válidas: primero contra la base y, como respaldo si la base no responde
+    o el usuario no existe ahí, contra ADMIN_USER / ADMIN_PASSWORD del .env."""
+    registro = repository.verify_user(usuario, clave)
+    if registro:
+        return registro.username, registro.role
+    admin_user, admin_pass = os.getenv("ADMIN_USER", "admin"), os.getenv("ADMIN_PASSWORD", "")
+    if admin_pass and usuario == admin_user and clave == admin_pass:
+        return usuario, "ADMIN"
+    return None
 
 
 def check_auth() -> bool:
@@ -45,12 +68,10 @@ def check_auth() -> bool:
 
             st.markdown("<br>", unsafe_allow_html=True)
             if st.button("Iniciar Sesión", use_container_width=True, type="primary"):
-                admin_user = os.getenv("ADMIN_USER", "admin")
-                admin_pass = os.getenv("ADMIN_PASSWORD", "CommunityLab2026!")
-
-                if username == admin_user and password == admin_pass:
+                acceso = autenticar(username, password)
+                if acceso:
                     st.session_state["authenticated"] = True
-                    st.session_state["username"] = username
+                    st.session_state["username"], st.session_state["role"] = acceso
                     st.rerun()
                 else:
                     st.error("Credenciales incorrectas")
@@ -58,8 +79,10 @@ def check_auth() -> bool:
 
 
 def main():
+    error_base = iniciar_base()
     if not check_auth():
         st.stop()
+    rol = st.session_state.get("role", "CURATOR")
 
     if "current_nav" not in st.session_state:
         st.session_state["current_nav"] = "overview"
@@ -77,25 +100,39 @@ def main():
         """, unsafe_allow_html=True)
 
         with st.container(border=True):
-            st.markdown(f"**Operador:** `{st.session_state.get('username')}`")
+            st.markdown(f"**Operador:** `{st.session_state.get('username')}` ({rol})")
             st.markdown("**Cloud:** `OCI Always Free`")
+            st.markdown(f"**Base:** `{repository.nombre_motor()}`")
+            if error_base:
+                st.caption(f"⚠️ La base no respondió: {error_base}")
 
         st.markdown("<br>", unsafe_allow_html=True)
         st.caption("ORIGEN DE DATOS")
         data_source = st.selectbox(
             "Fuente activa:",
-            ["Dataset Estándar (30 msgs)", "Discord Live (.jsonl)"],
+            ["Dataset Estándar (30 msgs)", "Discord Live (.jsonl)", "📂 Subir archivo JSON (Formato A)"],
             index=0,
             label_visibility="collapsed"
         )
 
         if data_source == "Dataset Estándar (30 msgs)":
             dataset = load_fixture_data()
-        else:
+        elif data_source == "Discord Live (.jsonl)":
             dataset = load_discord_raw_stream()
             if dataset is None:
                 st.warning("No hay capturas en data/raw/. Usando dataset estándar como fallback.")
                 dataset = load_fixture_data()
+        else:
+            dataset = None
+            archivo = st.file_uploader("Lote JSON en Formato A (spec.md)", type=["json"])
+            if archivo:
+                try:
+                    dataset = load_uploaded_json_file(archivo)
+                    st.success(f"`{archivo.name}`: {len(dataset.interacciones)} mensajes")
+                except ValueError as error:
+                    st.error(str(error))
+            else:
+                st.info("Sube un archivo para comenzar.")
 
         st.session_state["dataset"] = dataset
 
@@ -121,6 +158,19 @@ def main():
                      type="primary" if st.session_state["current_nav"] == "oci" else "secondary"):
             st.session_state["current_nav"] = "oci"
             st.rerun()
+
+        if rol == "ADMIN":
+            with st.expander("👤 Gestión de usuarios"):
+                nuevo_usuario = st.text_input("Usuario", key="reg_usuario")
+                nueva_clave = st.text_input("Contraseña", type="password", key="reg_clave")
+                nuevo_rol = st.selectbox("Rol", ["CURATOR", "VIEWER", "ADMIN"], key="reg_rol")
+                if st.button("Crear usuario", use_container_width=True):
+                    if not (nuevo_usuario and nueva_clave):
+                        st.warning("Completa el usuario y la contraseña.")
+                    elif repository.register_user(nuevo_usuario, nueva_clave, role=nuevo_rol):
+                        st.success(f"Usuario `{nuevo_usuario}` creado.")
+                    else:
+                        st.error("No se pudo crear el usuario (¿ya existe?).")
 
         st.markdown("<br><br>", unsafe_allow_html=True)
         if st.button("Cerrar Sesión", use_container_width=True):

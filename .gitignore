@@ -1,5 +1,17 @@
 # Secretos — NUNCA subir
 .env
+.env.*
+!.env.example
+*.pem
+*.key
+oci_api_key*
+
+# Credenciales de OCI Autonomous Database (wallet mTLS): se copia en local, nunca al repositorio
+data/wallet/
+data/Wallet_*/
+*.p12
+*.sso
+*.jks
 
 # Python
 __pycache__/
@@ -19,3 +31,8 @@ Thumbs.db
 # Salidas locales del motor (contienen textos de mensajes)
 salidas/
 data/cache/
+# Paquetes e imágenes que guarda el panel en local (copia de lo que va al bucket de OCI)
+data/processed/
+
+# Base SQLite local de contingencia
+data/*.db

@@ -177,3 +177,17 @@ def load_discord_raw_stream(raw_dir: str = "data/raw") -> Optional[BatchInputPay
         periodo_referencia="Capturas_En_Vivo",
         interacciones=interacciones
     )
+
+def load_uploaded_json_file(archivo) -> BatchInputPayload:
+    """Lote JSON (Formato A) subido desde el panel. Lanza ValueError con un mensaje legible si no es válido.
+    Basado en la carga de archivos de Álvaro."""
+    try:
+        datos = json.load(archivo)
+    except (json.JSONDecodeError, UnicodeDecodeError) as error:
+        raise ValueError(f"El archivo no es un JSON válido ({error})") from error
+    if not isinstance(datos, dict) or "interacciones" not in datos:
+        raise ValueError("Falta la lista 'interacciones' del Formato A (ver spec.md)")
+    try:
+        return BatchInputPayload(**datos)
+    except Exception as error:
+        raise ValueError(f"El lote no cumple el Formato A: {str(error).splitlines()[0]}") from error
