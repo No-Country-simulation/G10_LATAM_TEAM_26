@@ -14,3 +14,17 @@ services:
       - ./run_app.py:/app/run_app.py
       - ./data:/app/data
     restart: unless-stopped
+
+  # Bot de ingesta de Discord en tiempo real: escribe las capturas en data/raw/
+  discord-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: communitylab_bot
+    command: ["python", "-m", "src.adapters.ingestion.discord_bot"]
+    env_file:
+      - .env
+    volumes:
+      - ./src:/app/src
+      - ./data:/app/data
+    restart: unless-stopped

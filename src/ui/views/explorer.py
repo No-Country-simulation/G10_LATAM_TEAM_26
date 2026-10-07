@@ -7,6 +7,7 @@ import time
 import streamlit as st
 
 from src import config
+from src.adapters.db import repository
 from src.adapters.ingestion.loaders import interacciones_desde_payload
 from src.core.orchestrator import clasificar_en_segundo_plano, generar_contenido, generar_imagenes
 from src.domain.schemas import BatchInputPayload
@@ -62,6 +63,13 @@ def progreso_clasificacion():
     st.session_state["segundos_clasificacion"] = clasificacion.segundos
     st.session_state["inicio_redaccion"] = time.perf_counter()
     simulado = st.session_state.get("modo_simulado", False)
+    if not simulado:  # los análisis reales quedan en la base para no reprocesar esos mensajes
+        try:
+            st.session_state["guardados_en_base"] = repository.guardar_mensajes(
+                detalle["procesados"], st.session_state.get("textos_lote", {}),
+                st.session_state.get("comunidad_lote", "desconocida"))
+        except Exception as error:
+            st.session_state["guardados_en_base"] = f"no se pudo guardar ({type(error).__name__})"
     st.session_state["generacion"] = generar_contenido(detalle, simulado=simulado)
     if not simulado:  # las imágenes se generan en otro hilo, de mayor a menor score, sin bloquear el paquete
         st.session_state["hilo_imagenes"] = generar_imagenes(detalle["paquete"], st.session_state["generacion"])
@@ -89,6 +97,10 @@ def progreso_redaccion():
     simulado = " (modo simulado)" if st.session_state.get("modo_simulado") else ""
     st.success(f"Clasificación en {clasif:.1f} s y {listos} de {total} borradores redactados en "
                f"{st.session_state.get('segundos_redaccion', 0):.1f} s más{simulado}.")
+    guardados = st.session_state.get("guardados_en_base")
+    if guardados is not None:
+        st.caption(f"🗃️ Base de datos ({repository.nombre_motor()}): "
+                   f"{guardados if isinstance(guardados, str) else f'{guardados} mensajes nuevos guardados'}.")
 
 
 def render_explorer_view(dataset: BatchInputPayload | None):
@@ -108,6 +120,10 @@ def render_explorer_view(dataset: BatchInputPayload | None):
         st.info(f"⚡ **Motor por lotes:** {config.TAMANO_LOTE} mensajes por llamada, hasta "
                 f"{config.MAX_CONCURRENCIA} llamadas en paralelo y respaldo automático entre proveedores.")
         simulado = st.toggle("Modo simulado (sin IA, no gasta cuota)", value=False)
+        omitir_repetidos = st.toggle(f"Omitir mensajes ya procesados ({repository.nombre_motor()})", value=True,
+                                     disabled=simulado,
+                                     help="Los mensajes de esta comunidad que ya se analizaron con IA no se vuelven "
+                                          "a enviar. Desactívalo para reprocesarlos.")
     with col2:
         cantidad = st.number_input("Mensajes a procesar:", min_value=1, max_value=total_disponibles,
                                    value=total_disponibles, step=1)
@@ -117,12 +133,23 @@ def render_explorer_view(dataset: BatchInputPayload | None):
 
     if iniciar:
         interacciones, metadatos = interacciones_desde_payload(dataset, int(cantidad))
+        comunidad = dataset.origen_comunidad
+        st.session_state.pop("guardados_en_base", None)
+        if omitir_repetidos and not simulado:
+            interacciones, repetidos = repository.separar_nuevos(interacciones, comunidad)
+            if repetidos:
+                st.info(f"🗃️ {repetidos} mensajes de esta comunidad ya estaban procesados y se omiten.")
+            if not interacciones:
+                st.warning("Todos los mensajes ya fueron procesados. Desactiva «Omitir mensajes ya procesados» "
+                           "para analizarlos de nuevo.")
+                st.stop()
         anterior = st.session_state.pop("hilo_imagenes", None)
         if anterior:  # un lote nuevo: no se siguen generando imágenes del anterior
             anterior.detener()
         for clave in ("paquete", "procesados", "avisos", "generacion", "redaccion_notificada", "oci_result"):
             st.session_state.pop(clave, None)
         st.session_state["modo_simulado"] = simulado
+        st.session_state["comunidad_lote"] = comunidad
         st.session_state["textos_lote"] = {m["message_id"]: m for m in interacciones}
         st.session_state["clasificacion"] = clasificar_en_segundo_plano(interacciones, metadatos, simulado=simulado)
 
