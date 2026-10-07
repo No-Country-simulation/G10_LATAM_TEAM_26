@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 
 from src.ui.styles import apply_enterprise_theme
 from src.adapters.db import repository
+from src.adapters.ingestion.discord_api import DiscordAPI
 from src.adapters.ingestion.loaders import load_discord_raw_stream, load_fixture_data, load_uploaded_json_file
 from src.ui.views.dashboard import render_dashboard_view
 from src.ui.views.explorer import render_explorer_view
@@ -46,6 +47,34 @@ def autenticar(usuario: str, clave: str):
     if admin_pass and usuario == admin_user and clave == admin_pass:
         return usuario, "ADMIN"
     return None
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def mensajes_discord() -> tuple:
+    """Mensajes recientes de los canales vía la API de Discord, a lo más una consulta por minuto. (registros, error)"""
+    try:
+        return DiscordAPI().mensajes_recientes(), ""
+    except Exception as error:
+        return [], f"{type(error).__name__}: {str(error)[:120]}"
+
+
+def fuente_discord():
+    """Discord bajo demanda: no hace falta un bot conectado; si además corre el bot, se suman sus capturas."""
+    if not DiscordAPI().configurado:
+        st.caption("Sin DISCORD_BOT_TOKEN: solo se leen las capturas del bot en data/raw/.")
+        return load_discord_raw_stream()
+    if st.button("🔄 Traer mensajes nuevos", use_container_width=True):
+        mensajes_discord.clear()
+    with st.spinner("Leyendo Discord…"):
+        recientes, error = mensajes_discord()
+    if error:
+        st.caption(f"⚠️ Discord no respondió ({error}); se usan las capturas locales.")
+    dataset = load_discord_raw_stream(recientes=recientes)
+    if dataset:
+        ultimo = dataset.interacciones[0]
+        st.caption(f"{len(dataset.interacciones)} mensajes · el más reciente: {ultimo.timestamp[:16].replace('T', ' ')} "
+                   f"UTC en #{ultimo.channel}")
+    return dataset
 
 
 def check_auth() -> bool:
@@ -110,17 +139,17 @@ def main():
         st.caption("ORIGEN DE DATOS")
         data_source = st.selectbox(
             "Fuente activa:",
-            ["Dataset Estándar (30 msgs)", "Discord Live (.jsonl)", "📂 Subir archivo JSON (Formato A)"],
+            ["Dataset Estándar (30 msgs)", "Discord Live", "📂 Subir archivo JSON (Formato A)"],
             index=0,
             label_visibility="collapsed"
         )
 
         if data_source == "Dataset Estándar (30 msgs)":
             dataset = load_fixture_data()
-        elif data_source == "Discord Live (.jsonl)":
-            dataset = load_discord_raw_stream()
+        elif data_source == "Discord Live":
+            dataset = fuente_discord()
             if dataset is None:
-                st.warning("No hay capturas en data/raw/. Usando dataset estándar como fallback.")
+                st.warning("No llegaron mensajes de Discord. Usando dataset estándar como fallback.")
                 dataset = load_fixture_data()
         else:
             dataset = None

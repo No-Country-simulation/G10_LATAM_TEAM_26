@@ -99,84 +99,73 @@ def load_fixture_data(file_path: str = "data/fixtures/lote_ejemplo_formato_a.jso
         return None
 
 
-def load_discord_raw_stream(raw_dir: str = "data/raw") -> Optional[BatchInputPayload]:
-    """
-    Lee las capturas en bruto (.jsonl) generadas por el bot de Discord en data/raw/,
-    aplica filtrado inicial y normaliza los mensajes al contrato BatchInputPayload.
-    """
-    raw_path = Path(raw_dir)
-    if not raw_path.exists():
-        return None
+def leer_capturas(raw_dir: str = "data/raw") -> List[Dict[str, Any]]:
+    """Todos los mensajes guardados por el bot de Discord en data/raw/ (un .jsonl por día)."""
+    registros = []
+    for archivo in sorted(Path(raw_dir).glob("**/*discord_capturas.jsonl")):
+        with open(archivo, "r", encoding="utf-8") as f:
+            for linea in f:
+                try:
+                    registros.append(json.loads(linea))
+                except json.JSONDecodeError:
+                    continue
+    return registros
 
-    # Buscar todos los archivos .jsonl recursivamente
-    jsonl_files = list(raw_path.glob("**/*discord_capturas.jsonl"))
-    if not jsonl_files:
-        return None
 
-    # Tomar el más reciente por fecha de modificación
-    latest_file = max(jsonl_files, key=lambda f: f.stat().st_mtime)
-    logger.info(f"Cargando stream de Discord desde: {latest_file}")
+def _tipo_por_canal(canal: str) -> str:
+    """Clasificación heurística inicial basada en el canal de origen."""
+    if "logro" in canal or "empleo" in canal:
+        return "testimonio"
+    if "duda" in canal or "pregunt" in canal:
+        return "pregunta_tecnica"
+    if "feedback" in canal:
+        return "feedback"
+    return "conversacion"
 
+
+def payload_desde_discord(registros: List[Dict[str, Any]]) -> Optional[BatchInputPayload]:
+    """Normaliza mensajes de Discord (del bot o de la API) al Formato A: sin bots ni mensajes vacíos, sin repetidos
+    (gana la última captura, que trae las ediciones) y del más reciente al más antiguo, para que los primeros N
+    mensajes del lote sean los últimos que llegaron."""
+    unicos: Dict[str, Dict[str, Any]] = {}
+    for registro in registros:
+        if registro.get("id") and not registro.get("author", {}).get("bot", False):
+            unicos[registro["id"]] = registro
     interacciones: List[RawMessageInteraction] = []
-
-    with open(latest_file, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                raw_msg = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-
-            # Descartar mensajes de bots
-            if raw_msg.get("author", {}).get("bot", False):
-                continue
-
-            content = raw_msg.get("clean_content") or raw_msg.get("content", "")
-            if not content.strip():
-                continue
-
-            channel_name = raw_msg.get("channel", {}).get("name", "general").lower()
-            
-            # Clasificación heurística inicial basada en el canal de origen
-            tipo_declarado = "conversacion"
-            if "logro" in channel_name or "empleo" in channel_name:
-                tipo_declarado = "testimonio"
-            elif "duda" in channel_name or "pregunt" in channel_name:
-                tipo_declarado = "pregunta_tecnica"
-            elif "feedback" in channel_name:
-                tipo_declarado = "feedback"
-
-            # Sumar conteo de reacciones del mensaje
-            total_reacciones = sum(r.get("count", 0) for r in raw_msg.get("reactions", []))
-
-            interacciones.append(
-                RawMessageInteraction(
-                    message_id=f"DISC-{raw_msg['id'][-6:]}",
-                    source="discord_live",
-                    channel=channel_name,
-                    timestamp=raw_msg.get("timestamp", ""),
-                    autor=raw_msg.get("author", {}).get("display_name", "Miembro Discord"),
-                    tipo_declarado=tipo_declarado,
-                    texto=content,
-                    metadata={
-                        "reacciones": total_reacciones,
-                        "respuestas": 0,
-                        "attachments": len(raw_msg.get("attachments", []))
-                    }
-                )
-            )
-
+    for raw_msg in sorted(unicos.values(), key=lambda r: r.get("timestamp", ""), reverse=True):
+        content = _limpiar_discord(raw_msg.get("clean_content") or raw_msg.get("content", ""))
+        if not content:
+            continue
+        canal = (raw_msg.get("channel") or {}).get("name") or "general"
+        interacciones.append(RawMessageInteraction(
+            message_id=f"DISC-{raw_msg['id'][-6:]}",
+            source="discord_live",
+            channel=canal.lower(),
+            timestamp=raw_msg.get("timestamp", ""),
+            autor=raw_msg.get("author", {}).get("display_name") or "Miembro Discord",
+            tipo_declarado=_tipo_por_canal(canal.lower()),
+            texto=content,
+            metadata={
+                "reacciones": sum(r.get("count", 0) for r in raw_msg.get("reactions", [])),
+                "respuestas": 0,
+                "attachments": len(raw_msg.get("attachments", [])),
+            },
+        ))
     if not interacciones:
         return None
-
     return BatchInputPayload(
         formato_version="1.0-live",
         origen_comunidad="Discord_Servidor_Oficial",
         periodo_referencia="Capturas_En_Vivo",
-        interacciones=interacciones
+        interacciones=interacciones,
     )
+
+
+def load_discord_raw_stream(raw_dir: str = "data/raw",
+                            recientes: Optional[List[Dict[str, Any]]] = None) -> Optional[BatchInputPayload]:
+    """Capturas del bot en data/raw/ más los mensajes traídos bajo demanda con la API de Discord (si los hay)."""
+    return payload_desde_discord(leer_capturas(raw_dir) + list(recientes or []))
+
 
 def load_uploaded_json_file(archivo) -> BatchInputPayload:
     """Lote JSON (Formato A) subido desde el panel. Lanza ValueError con un mensaje legible si no es válido.
