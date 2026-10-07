@@ -1,16 +1,30 @@
 services:
+  # Servicio 1: Plataforma Web Streamlit
   communitylab-app:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: communitylab_web
     ports:
-      - "8510:8501"  # Mapea tu puerto local 8510 al 8501 interno del contenedor
+      - "8510:8501"
     env_file:
       - .env
     volumes:
-      # Monta tu código en tiempo real: cualquier cambio que hagas en VS Code se refleja sin reconstruir la imagen
       - ./src:/app/src
       - ./run_app.py:/app/run_app.py
+      - ./data:/app/data
+    restart: unless-stopped
+
+  # Servicio 2: Bot de Ingesta Discord en Tiempo Real (Escucha y escribe en data/raw)
+  discord-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: communitylab_bot
+    command: ["python", "-m", "src.adapters.ingestion.discord_bot"]
+    env_file:
+      - .env
+    volumes:
+      - ./src:/app/src
       - ./data:/app/data
     restart: unless-stopped

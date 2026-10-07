@@ -10,9 +10,11 @@ env/
 # Secretos y credenciales (REGLA DE ORO DE SEGURIDAD)
 .env
 .env.*
-*.pem
 *.key
-oci_api_key.pem
+*.pem
+data/*.pem
+*@*.pem
+oci_api_key*
 
 # Credenciales de Oracle Cloud Database (mTLS Wallet)
 *.zip

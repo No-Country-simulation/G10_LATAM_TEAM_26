@@ -22,18 +22,21 @@ logger = setup_logger("orchestrator")
 
 
 def process_batch_pipeline(interactions: List[RawMessageInteraction]) -> Tuple[List[Tuple[ProcessedMessage, Optional[GeneratedAssets]]], dict]:
-    # 1. Filtro estricto contra Oracle Cloud (Deduplicación en OCI)
-    mensajes_nuevos = filter_unprocessed_interactions(interactions)
+    # Detectar fuente activa (ej. 'fixture_estandar', 'discord_live', 'upload_usuario')
+    source_activo = interactions[0].source if interactions else "discord_live"
+
+    # 1. Filtro estricto contra Oracle Cloud para ESTA fuente
+    mensajes_nuevos = filter_unprocessed_interactions(interactions, source=source_activo)
 
     if not mensajes_nuevos:
-        logger.info("Todos los mensajes ya existen en la base de datos de Oracle Cloud.")
+        logger.info(f"Todos los mensajes de {source_activo} ya existen en Oracle Cloud.")
         return [], {
             "total_procesados": 0, 
             "sentimiento_predominante": "N/A", 
-            "temas_principales": ["Sin mensajes nuevos (Deduplicados en OCI)"]
+            "temas_principales": [f"Todos los mensajes de {source_activo} ya están en OCI"]
         }
 
-    # 2. Sanitización preventiva del lote
+    # 2. Sanitizar el lote de mensajes pendientes
     sanitized_batch = []
     mensajes_ordenados = []
     for m in mensajes_nuevos:
@@ -49,7 +52,7 @@ def process_batch_pipeline(interactions: List[RawMessageInteraction]) -> Tuple[L
         sanitized_batch.append(item)
         mensajes_ordenados.append((m, c_auth, c_text))
 
-    # 3. Invocación única al LLM
+    # 3. Invocación única a Gemini
     batch_result = analyze_batch_with_llm(sanitized_batch)
 
     final_results = []
@@ -115,8 +118,8 @@ def process_batch_pipeline(interactions: List[RawMessageInteraction]) -> Tuple[L
                 )
                 final_results.append((proc, None))
 
-    # 4. Guardar en Oracle Cloud los mensajes procesados
+    # 4. Guardar en Oracle Cloud asociando la fuente correcta
     if final_results:
-        save_processed_messages(final_results)
+        save_processed_messages(final_results, source=source_activo)
 
     return final_results, resumen

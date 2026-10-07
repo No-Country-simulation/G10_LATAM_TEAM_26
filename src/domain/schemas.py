@@ -1,114 +1,124 @@
 """
 CommunityLab AI - Domain Schemas (Pydantic Contracts)
-Contratos de spec.md: Formato A (lote de entrada) y Formato B (paquete de distribución).
+Contratos universales y trazables para el pipeline, la UI y la persistencia en OCI.
 """
-
+from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Literal, Optional
-from pydantic import BaseModel, Field, model_validator
+from typing import Any, Dict, List, Optional
+from pydantic import BaseModel, Field
 
 
 class OpportunityType(str, Enum):
     SUCCESS_STORY = "SUCCESS_STORY"
-    MILESTONE = "MILESTONE"
     FAQ = "FAQ"
-    OPERATIONAL_QUERY = "OPERATIONAL_QUERY"
+    TREND = "TREND"
     FEEDBACK = "FEEDBACK"
+    MILESTONE = "MILESTONE"
     NONE = "NONE"
 
 
-# ─── FORMATO A: lote de interacciones ────────────────────────────────────────
+class SentimentType(str, Enum):
+    POSITIVE = "positive"
+    NEUTRAL = "neutral"
+    NEGATIVE = "negative"
+    HIGHLY_POSITIVE = "Altamente Positivo"
+
 
 class RawMessageInteraction(BaseModel):
-    """Estructura de cada interacción dentro del lote recibido."""
+    """Estructura de entrada de cada interacción cruda o normalizada."""
     message_id: str
     source: str = "discord"
     channel: str
-    timestamp: str
+    timestamp: str = ""
     autor: str
-    tipo_declarado: Optional[str] = None
+    tipo_declarado: Optional[str] = "conversacion"
     texto: str
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
 class BatchInputPayload(BaseModel):
-    """Esquema de entrada para lotes de interacciones (ej: lote_ejemplo_formato_a.json)."""
+    """Lote de entrada completo (Formato A)."""
     formato_version: str = "1.0"
-    origen_comunidad: str
-    periodo_referencia: str
+    origen_comunidad: str = "Discord_Comunidad"
+    periodo_referencia: str = "Semana_04"
     fecha_ingesta: Optional[str] = None
-    interacciones: List[RawMessageInteraction]
+    interacciones: List[RawMessageInteraction] = Field(default_factory=list)
 
 
-# ─── FORMATO B: paquete de activos de distribución ───────────────────────────
+class SemanticAnalysis(BaseModel):
+    """Salida del análisis semántico."""
+    sentiment: str = "neutral"
+    topics: List[str] = Field(default_factory=list)
+    relevance_score: float = Field(default=0.5, ge=0.0, le=1.0)
+    intent: Optional[str] = None
 
-CAMPOS_POR_FORMATO = {
-    "post_linkedin": {"titulo", "copy", "hashtags", "canal_recomendado", "potencial_engagement"},
-    "destaque_newsletter": {"seccion", "titular", "resumen"},
-    "sugerencia_faq": {"tema", "cuerpo", "origen_descripcion"},
-}
+
+class OpportunityResult(BaseModel):
+    """Resultado del scoring de oportunidad."""
+    type: OpportunityType = OpportunityType.NONE
+    opportunity_score: float = Field(default=0.3, ge=0.0, le=1.0)
+    reason: str = "Evaluado"
 
 
-class OrigenActivo(BaseModel):
+class ProcessedMessage(BaseModel):
+    """Mensaje enriquecido y sanitizado."""
     message_id: str
-    opportunity_id: str
-    channel: Optional[str] = None
-    autor: Optional[str] = None
-    message: str
-    sentiment: Literal["positive", "neutral", "negative"]
-    topics: List[str]
-    type: OpportunityType
-    score: float = Field(ge=0.0, le=1.0)
-    reason: str
+    channel: str
+    autor_anonimizado: str
+    texto_limpio: str
+    analysis: SemanticAnalysis
+    opportunity: OpportunityResult
 
 
-class Activo(BaseModel):
-    activo_id: str
-    formato: Literal["post_linkedin", "destaque_newsletter", "sugerencia_faq"]
-    estado_curaduria: Literal["borrador", "aprobado", "publicado", "descartado"]
-    origen: OrigenActivo
-    contenido: Dict[str, Any]
-    # Imagen de la publicación (opcional): estado pendiente | generando | lista | error | omitida, prompt y ruta
-    imagen: Optional[Dict[str, Any]] = None
+# ─── ACTIVOS DE MARKETING MULTIFORMATO ───────────────────────────────────────
 
-    @model_validator(mode="after")
-    def _contenido_segun_formato(self):
-        faltan = CAMPOS_POR_FORMATO[self.formato] - self.contenido.keys()
-        if faltan:
-            raise ValueError(f"{self.activo_id}: al contenido de {self.formato} le faltan {sorted(faltan)}")
-        return self
+class PostLinkedIn(BaseModel):
+    titulo: str
+    texto_copy: str = Field(..., alias="copy", serialization_alias="copy")
+    canal_recomendado: str = "LinkedIn Oficial"
+    potencial_engagement: str = "Alto"
+
+    model_config = {
+        "populate_by_name": True
+    }
 
 
-class Tendencia(BaseModel):
+class DestaqueNewsletter(BaseModel):
+    seccion: str = "Comunidad"
+    titular: str
+    resumen: str
+
+
+class SugerenciaFAQ(BaseModel):
     tema: str
-    menciones: int
-    descripcion: str
+    origen: str = ""
+    status: str = "derivado_a_mentoria"
 
+
+class GeneratedAssets(BaseModel):
+    post_linkedin: Optional[PostLinkedIn] = None
+    destaque_newsletter_semanal: Optional[DestaqueNewsletter] = None
+    sugerencia_contenido_faq: Optional[SugerenciaFAQ] = None
 
 class ResumenComunidad(BaseModel):
-    total_interacciones_procesadas: int
-    sentimiento_predominante: Optional[str] = None
-    distribucion_sentimiento: Dict[str, int]
-    temas_principales: List[str]
-    oportunidades_detectadas: int
-    consultas_operativas: int
-    feedback_recibido: int = 0
-    tendencias_detectadas: List[Tendencia]
+    total_interacciones_procesadas: int = 0
+    sentimiento_predominante: str = "Positivo"
+    temas_principales: List[str] = Field(default_factory=list)
 
 
 class AlmacenamientoOCI(BaseModel):
-    bucket: str
-    ruta_objeto: str
-    status: str
+    bucket: str = "communitylab-bucket"
+    ruta_objeto: str = ""
+    status: str = "guardado_con_exito"
 
 
 class PaqueteDistribucion(BaseModel):
-    formato_version: Literal["1.0"]
-    status: Literal["exito", "parcial", "error"]
-    paquete_id: str
-    origen_comunidad: str
-    periodo_referencia: str
-    fecha_generacion: str
-    resumen_comunidad: ResumenComunidad
-    activos: List[Activo]
-    almacenamiento_oci: AlmacenamientoOCI
+    """Esquema oficial Formato B exigido en la pág 5 del PDF de la Hackathon."""
+    status: str = "exito"
+    resumen_comunidad: Dict[str, Any] = Field(default_factory=dict)
+    activos_distribucion_generados: GeneratedAssets = Field(default_factory=GeneratedAssets)
+    almacenamiento_oci: Optional[Dict[str, str]] = None
+
+
+# Alias para compatibilidad con código anterior
+FinalBatchOutput = PaqueteDistribucion

@@ -108,26 +108,58 @@ def register_user(username: str, password: str, email: str = "", role: str = "CU
         return None
 
 
-def get_existing_message_ids() -> Set[str]:
-    """Obtiene los IDs de mensajes guardados en OCI de forma segura."""
+def _normalizar_source(source: Optional[str]) -> Optional[List[str]]:
+    """Devuelve las variantes equivalentes del source para no perder datos históricos."""
+    if not source:
+        return None
+    s = source.lower()
+    if "discord" in s:
+        return ["discord", "discord_live"]
+    if "fixture" in s or "estandar" in s:
+        return ["fixture_estandar", "fixture"]
+    if "upload" in s:
+        return ["upload_usuario", "upload"]
+    return [source]
+
+
+def get_existing_message_ids(source: Optional[str] = None) -> Set[str]:
+    """Obtiene los IDs de mensajes guardados en OCI filtrando por fuente normalizada."""
     try:
         with SessionLocal() as db:
-            ids = db.query(CommunityMessage.message_id).all()
+            query = db.query(CommunityMessage.message_id)
+            variantes = _normalizar_source(source)
+            if variantes:
+                query = query.filter(CommunityMessage.source.in_(variantes))
+            ids = query.all()
             return {item[0] for item in ids}
     except Exception as e:
         logger.error(f"Error consultando IDs en OCI: {str(e)}")
         return set()
 
 
-def filter_unprocessed_interactions(interactions: List[RawMessageInteraction]) -> List[RawMessageInteraction]:
-    existing_ids = get_existing_message_ids()
+def get_stored_count_by_source(source: Optional[str] = None) -> int:
+    """Cuenta los mensajes guardados en Oracle para la fuente activa."""
+    try:
+        with SessionLocal() as db:
+            query = db.query(CommunityMessage)
+            variantes = _normalizar_source(source)
+            if variantes:
+                query = query.filter(CommunityMessage.source.in_(variantes))
+            return query.count()
+    except Exception as e:
+        logger.error(f"Error contando mensajes en OCI: {str(e)}")
+        return 0
+
+
+def filter_unprocessed_interactions(interactions: List[RawMessageInteraction], source: Optional[str] = None) -> List[RawMessageInteraction]:
+    existing_ids = get_existing_message_ids(source=source)
     nuevos = [m for m in interactions if m.message_id not in existing_ids]
-    logger.info(f"Deduplicación OCI: {len(interactions)} recibidos, {len(nuevos)} nuevos, {len(interactions) - len(nuevos)} ya estaban en Oracle.")
+    logger.info(f"Deduplicación OCI ({source or 'global'}): {len(interactions)} recibidos, {len(nuevos)} nuevos.")
     return nuevos
 
 
-def save_processed_messages(processed_items: list):
-    """Guarda los mensajes en Oracle Cloud de forma resiliente (ignora duplicados ORA-00001)."""
+def save_processed_messages(processed_items: list, source: str = "discord_live"):
+    """Guarda los mensajes en Oracle Cloud asignando su fuente de origen respectiva."""
     if not processed_items:
         return
 
@@ -135,13 +167,12 @@ def save_processed_messages(processed_items: list):
         with SessionLocal() as db:
             guardados = 0
             for proc, assets in processed_items:
-                # Comprobar en base de datos antes de insertar
                 existe = db.query(CommunityMessage).filter(CommunityMessage.message_id == proc.message_id).first()
                 if not existe:
                     tipo_val = proc.opportunity.type.value if hasattr(proc.opportunity.type, "value") else str(proc.opportunity.type)
                     msg_record = CommunityMessage(
                         message_id=proc.message_id,
-                        source="discord",
+                        source=source,
                         channel=proc.channel,
                         author_raw=proc.autor_anonimizado,
                         author_anon=proc.autor_anonimizado,
@@ -156,25 +187,99 @@ def save_processed_messages(processed_items: list):
                     )
                     db.add(msg_record)
                     try:
-                        db.flush()  # Valida la inserción individual
+                        db.flush()
                         guardados += 1
                     except Exception:
-                        db.rollback()  # Si ese ID ya existía por concurrencia, lo salta
+                        db.rollback()
                         continue
 
             db.commit()
-            logger.info(f"✅ ¡ÉXITO! {guardados} mensajes nuevos insertados y confirmados en Oracle Cloud.")
+            logger.info(f"✅ ¡ÉXITO! {guardados} mensajes ({source}) insertados y confirmados en Oracle Cloud.")
     except Exception as e:
         logger.error(f"Fallo al guardar mensajes en OCI: {str(e)}")
 
-def get_high_value_opportunities(min_score: float = 0.70) -> List[CommunityMessage]:
-    """Recupera desde Oracle Cloud todas las oportunidades con Score >= min_score."""
+def get_high_value_opportunities(min_score: float = 0.70, source: Optional[str] = None) -> List[CommunityMessage]:
+    """Recupera desde Oracle Cloud las oportunidades con Score >= min_score, aisladas por fuente activa."""
     try:
         with SessionLocal() as db:
-            return db.query(CommunityMessage)\
-                     .filter(CommunityMessage.opportunity_score >= min_score)\
-                     .order_by(CommunityMessage.opportunity_score.desc())\
-                     .all()
+            query = db.query(CommunityMessage).filter(CommunityMessage.opportunity_score >= min_score)
+            
+            # Filtrar por fuente si se especifica (aislamiento estricto)
+            variantes = _normalizar_source(source)
+            if variantes:
+                query = query.filter(CommunityMessage.source.in_(variantes))
+
+            return query.order_by(CommunityMessage.opportunity_score.desc()).all()
     except Exception as e:
-        logger.error(f"Error consultando oportunidades en OCI: {str(e)}")
+        logger.error(f"Error consultando oportunidades en OCI ({source}): {str(e)}")
         return []
+
+def get_saved_marketing_assets() -> List[MarketingAsset]:
+    """Recupera desde Oracle Cloud todos los activos de marketing registrados."""
+    try:
+        with SessionLocal() as db:
+            return db.query(MarketingAsset).order_by(MarketingAsset.id.desc()).all()
+    except Exception as e:
+        logger.error(f"Error consultando activos en OCI: {str(e)}")
+        return []
+
+def get_community_analytics_summary() -> dict:
+    """
+    Calcula métricas agregadas directamente desde Oracle Cloud:
+    distribución de oportunidades, sentimientos, canales y estado de activos.
+    """
+    try:
+        with SessionLocal() as db:
+            mensajes = db.query(CommunityMessage).all()
+            total = len(mensajes)
+            
+            if total == 0:
+                return {
+                    "total_oci": 0,
+                    "tipos": {},
+                    "sentimientos": {},
+                    "canales": {},
+                    "con_post": 0,
+                    "sin_post": 0
+                }
+
+            tipos = {}
+            sentimientos = {}
+            canales = {}
+            con_post = 0
+
+            for m in mensajes:
+                # Tipos de oportunidad
+                t = m.opportunity_type or "NONE"
+                tipos[t] = tipos.get(t, 0) + 1
+
+                # Sentimiento
+                s = m.sentiment or "neutral"
+                sentimientos[s] = sentimientos.get(s, 0) + 1
+
+                # Canales
+                c = f"#{m.channel}" if m.channel else "#general"
+                canales[c] = canales.get(c, 0) + 1
+
+                # Relación con activos de marketing
+                if len(m.assets) > 0:
+                    con_post += 1
+
+            return {
+                "total_oci": total,
+                "tipos": tipos,
+                "sentimientos": sentimientos,
+                "canales": canales,
+                "con_post": con_post,
+                "sin_post": total - con_post
+            }
+    except Exception as e:
+        logger.error(f"Error calculando analíticas en OCI: {str(e)}")
+        return {
+            "total_oci": 0,
+            "tipos": {},
+            "sentimientos": {},
+            "canales": {},
+            "con_post": 0,
+            "sin_post": 0
+        }

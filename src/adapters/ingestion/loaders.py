@@ -171,3 +171,18 @@ def load_discord_raw_stream(raw_dir: str = "data/raw") -> Optional[BatchInputPay
         periodo_referencia="Capturas_En_Vivo",
         interacciones=interacciones
     )
+
+def load_uploaded_json_file(uploaded_file) -> Optional[BatchInputPayload]:
+    """Carga y valida un archivo JSON subido por el usuario a través de Streamlit."""
+    if uploaded_file is None:
+        return None
+    try:
+        data = json.load(uploaded_file)
+        # Asegurar fuente identificable
+        if "interacciones" in data:
+            for item in data["interacciones"]:
+                item["source"] = "upload_usuario"
+        return BatchInputPayload(**data)
+    except Exception as e:
+        logger.error(f"Error procesando JSON subido por usuario: {str(e)}")
+        return None

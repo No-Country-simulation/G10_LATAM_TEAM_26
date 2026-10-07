@@ -13,6 +13,8 @@ from src.ui.views.dashboard import render_dashboard_view
 from src.ui.views.explorer import render_explorer_view
 from src.ui.views.studio import render_studio_view
 from src.ui.views.oci_view import render_oci_view
+from src.adapters.ingestion.loaders import load_fixture_data, load_discord_raw_stream, load_uploaded_json_file
+
 
 load_dotenv()
 
@@ -89,23 +91,62 @@ def main():
             st.markdown("**Cloud:** `OCI Always Free`")
 
         st.markdown("<br>", unsafe_allow_html=True)
-        st.caption("ORIGEN DE DATOS")
+
+        # 1. SELECTOR Y CARGADOR DE ORIGEN DE DATOS
+        st.caption("FUENTE DE DATOS")
         data_source = st.selectbox(
-            "Fuente activa:",
-            ["Dataset Estándar (30 msgs)", "Discord Live (.jsonl)"],
-            index=0,
-            label_visibility="collapsed"
+            "Seleccionar origen:",
+            ["Dataset Estándar (30 msgs)", "Discord Live (.jsonl)", "📂 Subir archivo JSON propio"],
+            index=0
         )
 
+        dataset = None
         if data_source == "Dataset Estándar (30 msgs)":
             dataset = load_fixture_data()
-        else:
+            if dataset:
+                for item in dataset.interacciones:
+                    item.source = "fixture_estandar"
+
+        elif data_source == "Discord Live (.jsonl)":
+            c_disc1, c_disc2 = st.columns([3, 1])
+            with c_disc2:
+                if st.button("🔄", help="Recargar capturas de Discord en vivo"):
+                    st.rerun()
+
             dataset = load_discord_raw_stream()
             if dataset is None:
-                st.warning("No hay capturas en data/raw/. Usando dataset estándar como fallback.")
+                st.warning("Sin capturas en data/raw/. Usando dataset estándar como respaldo.")
                 dataset = load_fixture_data()
+            else:
+                for item in dataset.interacciones:
+                    item.source = "discord"
+
+            st.session_state["dataset"] = dataset
+
+        elif data_source == "📂 Subir archivo JSON propio":
+            archivo_subido = st.file_uploader("Arrastra tu archivo JSON (Formato A):", type=["json"])
+            if archivo_subido:
+                dataset = load_uploaded_json_file(archivo_subido)
+                if dataset:
+                    for item in dataset.interacciones:
+                        item.source = "upload_usuario"
+                    st.success(f"Cargado: `{archivo_subido.name}` ({len(dataset.interacciones)} msgs)")
+            else:
+                st.info("Sube un archivo para comenzar.")
 
         st.session_state["dataset"] = dataset
+
+        # 2. CONFIGURACIÓN DINÁMICA DE DISCORD
+        with st.expander("🤖 Conectar otro Discord"):
+            st.caption("Actualiza las credenciales del bot en caliente:")
+            token_input = st.text_input("Discord Bot Token:", type="password", key="bot_token_cfg")
+            canales_input = st.text_input("Canales (separados por coma):", placeholder="general, logros, dudas", key="bot_canales_cfg")
+            if st.button("Guardar Configuración Bot", use_container_width=True):
+                if token_input:
+                    os.environ["DISCORD_BOT_TOKEN"] = token_input.strip()
+                if canales_input:
+                    os.environ["CANALES_OBSERVADOS"] = canales_input.strip()
+                st.success("Configuración de Discord actualizada en memoria.")
 
         st.markdown("<br>", unsafe_allow_html=True)
         st.caption("MÓDULOS DEL MOTOR")
