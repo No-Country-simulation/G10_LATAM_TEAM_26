@@ -123,7 +123,8 @@ def _tipo_por_canal(canal: str) -> str:
     return "conversacion"
 
 
-def payload_desde_discord(registros: List[Dict[str, Any]]) -> Optional[BatchInputPayload]:
+def payload_desde_discord(registros: List[Dict[str, Any]],
+                          origen: str = "Discord_Servidor_Oficial") -> Optional[BatchInputPayload]:
     """Normaliza mensajes de Discord (del bot o de la API) al Formato A: sin bots ni mensajes vacíos, sin repetidos
     (gana la última captura, que trae las ediciones) y del más reciente al más antiguo, para que los primeros N
     mensajes del lote sean los últimos que llegaron."""
@@ -155,16 +156,16 @@ def payload_desde_discord(registros: List[Dict[str, Any]]) -> Optional[BatchInpu
         return None
     return BatchInputPayload(
         formato_version="1.0-live",
-        origen_comunidad="Discord_Servidor_Oficial",
+        origen_comunidad=origen,
         periodo_referencia="Capturas_En_Vivo",
         interacciones=interacciones,
     )
 
 
-def load_discord_raw_stream(raw_dir: str = "data/raw",
-                            recientes: Optional[List[Dict[str, Any]]] = None) -> Optional[BatchInputPayload]:
-    """Capturas del bot en data/raw/ más los mensajes traídos bajo demanda con la API de Discord (si los hay)."""
-    return payload_desde_discord(leer_capturas(raw_dir) + list(recientes or []))
+def load_discord_raw_stream(raw_dir: str = "data/raw", recientes: Optional[List[Dict[str, Any]]] = None,
+                            origen: str = "Discord_Servidor_Oficial") -> Optional[BatchInputPayload]:
+    """Mensajes de Discord guardados en `raw_dir` más los traídos bajo demanda con la API (si los hay)."""
+    return payload_desde_discord(leer_capturas(raw_dir) + list(recientes or []), origen)
 
 
 def load_uploaded_json_file(archivo) -> BatchInputPayload:

@@ -1,30 +1,14 @@
 services:
-  communitylab-app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  # Panel web (React) y API (FastAPI) en un solo contenedor: http://localhost:8000
+  web:
+    build: .
     container_name: communitylab_web
     ports:
-      - "8510:8501"  # Mapea tu puerto local 8510 al 8501 interno del contenedor
+      - "8000:8000"
     env_file:
       - .env
     volumes:
-      # Monta tu código en tiempo real: cualquier cambio que hagas en VS Code se refleja sin reconstruir la imagen
-      - ./src:/app/src
-      - ./run_app.py:/app/run_app.py
-      - ./data:/app/data
-    restart: unless-stopped
-
-  # Bot de ingesta de Discord en tiempo real: escribe las capturas en data/raw/
-  discord-bot:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: communitylab_bot
-    command: ["python", "-m", "src.adapters.ingestion.discord_bot"]
-    env_file:
-      - .env
-    volumes:
-      - ./src:/app/src
+      # Credenciales de OCI (wallet y llave .pem), capturas de Discord, paquetes, caché y base local.
+      # Las rutas relativas del .env (data/wallet/..., data/oci_api_key.pem) apuntan aquí.
       - ./data:/app/data
     restart: unless-stopped

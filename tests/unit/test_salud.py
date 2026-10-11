@@ -2,7 +2,7 @@
 CommunityLab AI - Unit Tests
 Lectura de la salud de la comunidad a partir del sentimiento del lote (sin llamadas a la IA).
 """
-from src.ui.components.salud import estado_general, necesita_apoyo
+from src.core.salud import estado_general, necesita_apoyo
 
 
 def test_estado_general_por_proporcion():

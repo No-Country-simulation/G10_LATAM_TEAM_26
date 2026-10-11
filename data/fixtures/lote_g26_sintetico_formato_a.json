@@ -1,0 +1,368 @@
+{
+  "formato_version": "1.0",
+  "origen_comunidad": "Discord_ONE_2026_Sintetico",
+  "periodo_referencia": "Semana_38",
+  "fecha_ingesta": "2026-09-25T20:37:27Z",
+  "interacciones": [
+    {
+      "message_id": "MSG-0001",
+      "source": "discord",
+      "channel": "empleabilidad",
+      "timestamp": "2026-09-15T21:12:00Z",
+      "autor": "Usuario_001",
+      "texto": "Che, ¿alguien sabe si las certificaciones de ONE sirven para conseguir el primer trabajo en tecnología?"
+    },
+    {
+      "message_id": "MSG-0002",
+      "source": "discord",
+      "channel": "logros-y-empleos",
+      "timestamp": "2026-09-15T22:04:00Z",
+      "autor": "Usuario_004",
+      "texto": "Hoy terminé el módulo de Python y por primera vez pude hacer un ejercicio sin mirar la solución. Parece una boludez pero estoy re contento jajaja."
+    },
+    {
+      "message_id": "MSG-0003",
+      "source": "discord",
+      "channel": "python",
+      "timestamp": "2026-09-16T13:27:00Z",
+      "autor": "Usuario_002",
+      "texto": "Gente una duda, para aprender Python de verdad conviene hacer los ejercicios varias veces o pasar a hacer proyectos aunque todavía no entienda todo?"
+    },
+    {
+      "message_id": "MSG-0004",
+      "source": "discord",
+      "channel": "empleabilidad",
+      "timestamp": "2026-09-16T14:04:00Z",
+      "autor": "Usuario_007",
+      "texto": "¿Alguien más está haciendo cursos de Python mientras busca trabajo? No sé si conviene seguir acumulando certificados o empezar a armar proyectos para mostrar."
+    },
+    {
+      "message_id": "MSG-0005",
+      "source": "discord",
+      "channel": "ia",
+      "timestamp": "2026-09-16T14:42:00Z",
+      "autor": "Usuario_003",
+      "texto": "Estoy tratando de entender qué diferencia hay entre usar una API de un modelo y entrenar un modelo propio. A veces los cursos mezclan las dos cosas y termino medio perdido."
+    },
+    {
+      "message_id": "MSG-0006",
+      "source": "discord",
+      "channel": "aprendizaje",
+      "timestamp": "2026-09-16T15:18:00Z",
+      "autor": "Usuario_011",
+      "texto": "Estoy intentando estudiar todos los días aunque sea una hora. Algunos días avanzo un montón y otros apenas leo un rato, pero creo que me está ayudando más la constancia que querer recuperar todo de golpe."
+    },
+    {
+      "message_id": "MSG-0007",
+      "source": "discord",
+      "channel": "logros-y-empleos",
+      "timestamp": "2026-09-16T16:06:00Z",
+      "autor": "Usuario_001",
+      "texto": "Hoy terminé mi primer proyecto de Python que puedo mostrar en una entrevista. Es bastante simple, pero por fin siento que tengo algo concreto para enseñar en vez de solamente decir que hice un curso."
+    },
+    {
+      "message_id": "MSG-0008",
+      "source": "discord",
+      "channel": "python",
+      "timestamp": "2026-09-16T16:47:00Z",
+      "autor": "Usuario_004",
+      "texto": "¿Para practicar Python recomiendan resolver primero sin mirar la solución y después comparar, o directamente estudiar un ejemplo y modificarlo? Siento que si miro demasiado rápido no termino pensando por mi cuenta."
+    },
+    {
+      "message_id": "MSG-0009",
+      "source": "discord",
+      "channel": "general",
+      "timestamp": "2026-09-16T17:21:00Z",
+      "autor": "Usuario_006",
+      "texto": "Bueno, después de varios días peleándome con el proyecto finalmente logré que funcione. No sé si está bien hecho todavía, pero por lo menos ya dejó de romperse cada cinco minutos jajaja."
+    },
+    {
+      "message_id": "MSG-0010",
+      "source": "discord",
+      "channel": "python",
+      "timestamp": "2026-09-16T18:03:00Z",
+      "autor": "Usuario_002",
+      "texto": "che alguien mas se traba con los diccionarios? los entiendo cuando veo el ejemplo pero despues quiero hacer algo sola y chau jajaja"
+    },
+    {
+      "message_id": "MSG-0011",
+      "source": "discord",
+      "channel": "general",
+      "timestamp": "2026-09-16T18:36:00Z",
+      "autor": "Usuario_009",
+      "texto": "yo hoy entre a estudiar y termine ordenando todos los archivos de la pc 👍 mañana si o si arranco python"
+    },
+    {
+      "message_id": "MSG-0012",
+      "source": "discord",
+      "channel": "aprendizaje",
+      "timestamp": "2026-09-16T19:12:00Z",
+      "autor": "Usuario_005",
+      "texto": "yo tambien estaba haciendo eso y al final me sirvio ponerme un limite de 30 min. despues sigo con el ejercicio"
+    },
+    {
+      "message_id": "MSG-0013",
+      "source": "discord",
+      "channel": "ia",
+      "timestamp": "2026-09-16T19:48:00Z",
+      "autor": "Usuario_012",
+      "texto": "alguien sabe si para usar una api de ia hay que entrenar el modelo antes? porque en el curso dice una cosa y en youtube veo otra"
+    },
+    {
+      "message_id": "MSG-0014",
+      "source": "discord",
+      "channel": "empleabilidad",
+      "timestamp": "2026-09-16T20:22:00Z",
+      "autor": "Usuario_007",
+      "texto": "Estoy viendo ofertas de junior y piden como 20 cosas distintas 💀 Python, SQL, cloud, Git, inglés... por donde se supone que empieza una persona normal?"
+    },
+    {
+      "message_id": "MSG-0015",
+      "source": "discord",
+      "channel": "python",
+      "timestamp": "2026-09-16T21:01:00Z",
+      "autor": "Usuario_004",
+      "texto": "che alguien me explica por que mi for funciona una vez y despues no? ya revise el codigo como 15 veces y no veo nada raro"
+    },
+    {
+      "message_id": "MSG-0016",
+      "source": "discord",
+      "channel": "logros-y-empleos",
+      "timestamp": "2026-09-17T12:14:00Z",
+      "autor": "Usuario_003",
+      "texto": "me llamaron para una entrevista por un proyecto que subi hace unas semanas 😭 no pense que alguien lo iba a mirar de verdad"
+    },
+    {
+      "message_id": "MSG-0017",
+      "source": "discord",
+      "channel": "general",
+      "timestamp": "2026-09-17T12:51:00Z",
+      "autor": "Usuario_010",
+      "texto": "buen dia gente, pregunta totalmente random: ustedes estudian con musica o necesitan silencio? yo con musica termino cantando y no hago nada jajaj"
+    },
+    {
+      "message_id": "MSG-0018",
+      "source": "discord",
+      "channel": "aprendizaje",
+      "timestamp": "2026-09-17T13:27:00Z",
+      "autor": "Usuario_011",
+      "texto": "si mal jajaja yo tambien necesito silencio absoluto para estudiar"
+    },
+    {
+      "message_id": "MSG-0019",
+      "source": "discord",
+      "channel": "python",
+      "timestamp": "2026-09-17T14:06:00Z",
+      "autor": "Usuario_002",
+      "texto": "estoy haciendo un proyeto chiquito para practicar listas y ahora quiero meterle una interfaz pero capaz me estoy complicando al pedo"
+    },
+    {
+      "message_id": "MSG-0020",
+      "source": "discord",
+      "channel": "python",
+      "timestamp": "2026-09-17T14:43:00Z",
+      "autor": "Usuario_013",
+      "texto": "alguien tiene un ejemplo de como guardar datos en un archivo? no necesito nada super complicado, es para no perder lo que cargo cada vez que cierro el programa"
+    },
+    {
+      "message_id": "MSG-0021",
+      "source": "discord",
+      "channel": "general",
+      "timestamp": "2026-09-17T15:19:00Z",
+      "autor": "Usuario_006",
+      "texto": "yo dije que hoy iba a estudiar una hora y llevo 40 min mirando la misma funcion sin entenderla 😭"
+    },
+    {
+      "message_id": "MSG-0022",
+      "source": "discord",
+      "channel": "empleabilidad",
+      "timestamp": "2026-09-17T16:02:00Z",
+      "autor": "Usuario_007",
+      "texto": "¿Alguien sabe si en una entrevista técnica para un puesto junior te pueden pedir que programes en vivo? Estoy practicando pero me pongo mucho más nervioso cuando alguien mira lo que hago."
+    },
+    {
+      "message_id": "MSG-0023",
+      "source": "discord",
+      "channel": "ia",
+      "timestamp": "2026-09-17T16:41:00Z",
+      "autor": "Usuario_012",
+      "texto": "vi que ahora hay herramientas que te escriben bastante codigo solas. entonces para que sirve aprender a programar bien? no lo digo de mala onda, posta no se"
+    },
+    {
+      "message_id": "MSG-0024",
+      "source": "discord",
+      "channel": "general",
+      "timestamp": "2026-09-17T17:16:00Z",
+      "autor": "Usuario_014",
+      "texto": "che perdon que desapareci estos dias, entre el laburo y el curso no me estaba dando la cabeza para nada. hoy por fin pude volver"
+    },
+    {
+      "message_id": "MSG-0025",
+      "source": "discord",
+      "channel": "python",
+      "timestamp": "2026-09-17T17:53:00Z",
+      "autor": "Usuario_005",
+      "texto": "yo haria primero la version sin interfaz. si la logica funciona despues le agregas lo visual, sino terminas debuggeando dos problemas juntos"
+    },
+    {
+      "message_id": "MSG-0026",
+      "source": "discord",
+      "channel": "aprendizaje",
+      "timestamp": "2026-09-17T18:31:00Z",
+      "autor": "Usuario_011",
+      "texto": "igual siento que a veces leo demasiadas cosas antes de practicar. termino sabiendo la teoria pero cuando tengo que escribir el codigo quedo en blanco"
+    },
+    {
+      "message_id": "MSG-0027",
+      "source": "discord",
+      "channel": "logros-y-empleos",
+      "timestamp": "2026-09-17T19:08:00Z",
+      "autor": "Usuario_001",
+      "texto": "primera vez que alguien me paga por algo que hice con python jajaja son pocas horas pero me puso re contento"
+    },
+    {
+      "message_id": "MSG-0028",
+      "source": "discord",
+      "channel": "python",
+      "timestamp": "2026-09-17T19:44:00Z",
+      "autor": "Usuario_003",
+      "texto": "estoy intentando entender funciones y cada vez que creo que ya las agarre aparece un ejercicio que me hace dudar de todo jajaja"
+    },
+    {
+      "message_id": "MSG-0029",
+      "source": "discord",
+      "channel": "general",
+      "timestamp": "2026-09-17T20:21:00Z",
+      "autor": "Usuario_009",
+      "texto": "gente me voy, mañana sigo. si no aparezco es porque volvi a caer en el agujero negro de youtube"
+    },
+    {
+      "message_id": "MSG-0030",
+      "source": "discord",
+      "channel": "ia",
+      "timestamp": "2026-09-17T21:02:00Z",
+      "autor": "Usuario_015",
+      "texto": "alguien probo usar un modelo para revisar su propio codigo? lo hice recien y me marco un error que yo ni habia visto. igual despues tuve que comprobar si tenia razon"
+    },
+    {
+      "message_id": "MSG-0031",
+      "source": "discord",
+      "channel": "aprendizaje",
+      "timestamp": "2026-09-17T21:39:00Z",
+      "autor": "Usuario_010",
+      "texto": "yo necesito aprender a parar. empiezo un curso, veo otro que parece mejor y termino con 8 pestañas abiertas y cero ejercicios hechos"
+    },
+    {
+      "message_id": "MSG-0032",
+      "source": "discord",
+      "channel": "python",
+      "timestamp": "2026-09-18T12:08:00Z",
+      "autor": "Usuario_002",
+      "texto": "al final hice lo que dijo Usuario_005 y deje la interfaz para despues. mucho mejor, ahora por lo menos entiendo donde se rompe la logica"
+    },
+    {
+      "message_id": "MSG-0033",
+      "source": "discord",
+      "channel": "general",
+      "timestamp": "2026-09-18T12:47:00Z",
+      "autor": "Usuario_014",
+      "texto": "buen diaaa. hoy si vengo con energia. ayer no hice nada pero ya fue, tampoco me voy a castigar por un dia perdido"
+    },
+    {
+      "message_id": "MSG-0034",
+      "source": "discord",
+      "channel": "empleabilidad",
+      "timestamp": "2026-09-18T13:23:00Z",
+      "autor": "Usuario_007",
+      "texto": "ayer mande cv a tres lugares y hoy ya estoy mirando el mail cada diez minutos jajaja se que no tiene sentido pero bueno"
+    },
+    {
+      "message_id": "MSG-0035",
+      "source": "discord",
+      "channel": "python",
+      "timestamp": "2026-09-18T14:01:00Z",
+      "autor": "Usuario_004",
+      "texto": "AAAAA era una variable mal escrita. estuve una hora pensando que habia roto el for 😭"
+    },
+    {
+      "message_id": "MSG-0036",
+      "source": "discord",
+      "channel": "ia",
+      "timestamp": "2026-09-18T14:38:00Z",
+      "autor": "Usuario_012",
+      "texto": "ok creo que ahora entendi lo de la api. o sea yo no tengo que entrenar el modelo, estoy usando uno que ya esta disponible y le mando las instrucciones desde mi programa, no?"
+    },
+    {
+      "message_id": "MSG-0037",
+      "source": "discord",
+      "channel": "general",
+      "timestamp": "2026-09-18T15:16:00Z",
+      "autor": "Usuario_006",
+      "texto": "che alguien sabe si hoy hay reunion? vi algo ayer pero ahora no encuentro el mensaje"
+    },
+    {
+      "message_id": "MSG-0038",
+      "source": "discord",
+      "channel": "aprendizaje",
+      "timestamp": "2026-09-18T16:02:00Z",
+      "autor": "Usuario_011",
+      "texto": "hoy probe hacer el ejercicio sin mirar la solucion y tarde el triple jajaja pero cuando me salio senti que lo habia entendido de verdad"
+    },
+    {
+      "message_id": "MSG-0039",
+      "source": "discord",
+      "channel": "logros-y-empleos",
+      "timestamp": "2026-09-18T16:46:00Z",
+      "autor": "Usuario_001",
+      "texto": "mini logro de hoy: termine el proyecto y lo subi a github. seguro tiene mil cosas para mejorar pero por ahora lo dejo respirar 😂"
+    },
+    {
+      "message_id": "MSG-0040",
+      "source": "discord",
+      "channel": "ia",
+      "timestamp": "2026-09-18T17:18:00Z",
+      "autor": "Usuario_016",
+      "texto": "che alguno tuvo problemas para subir archivos a Object Storage de OCI? el bucket existe pero cuando intento cargar algo me tira 403 y no entiendo si es permiso o configuracion"
+    },
+    {
+      "message_id": "MSG-0041",
+      "source": "discord",
+      "channel": "ia",
+      "timestamp": "2026-09-18T18:02:00Z",
+      "autor": "Usuario_003",
+      "texto": "pregunta de OCI: donde se ve el namespace que hay que poner en el codigo? estoy siguiendo un ejemplo pero esa parte no me aparece igual"
+    },
+    {
+      "message_id": "MSG-0042",
+      "source": "discord",
+      "channel": "python",
+      "timestamp": "2026-09-18T19:11:00Z",
+      "autor": "Usuario_013",
+      "texto": "alguien configuro las credenciales de OCI desde python? no se si tengo que usar la api key directamente o generar primero los archivos de configuracion"
+    },
+    {
+      "message_id": "MSG-0043",
+      "source": "discord",
+      "channel": "python",
+      "timestamp": "2026-09-19T12:27:00Z",
+      "autor": "Usuario_005",
+      "texto": "estoy probando put_object con el SDK de python y me devuelve error aunque el cliente se crea bien. alguien sabe que parametro suele faltar en estos casos?"
+    },
+    {
+      "message_id": "MSG-0044",
+      "source": "discord",
+      "channel": "ia",
+      "timestamp": "2026-09-19T13:06:00Z",
+      "autor": "Usuario_012",
+      "texto": "otra de OCI: ahora me aparece 401 NotAuthenticated cuando intento acceder desde python. ya revise la key y sigo igual. a alguien mas le paso esta semana?"
+    },
+    {
+      "message_id": "MSG-0045",
+      "source": "discord",
+      "channel": "aprendizaje",
+      "timestamp": "2026-09-19T14:14:00Z",
+      "autor": "Usuario_010",
+      "texto": "los ejercicios practicos me estan sirviendo bastante mas que mirar teoria, pero estaria bueno que algunos tuvieran una consigna un poco mas abierta para intentar resolver sin que te lleven tanto de la mano"
+    }
+  ]
+}

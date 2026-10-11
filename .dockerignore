@@ -1,19 +1,22 @@
-__pycache__
-*.pyc
-*.pyo
-*.pyd
-.Python
-.venv
-venv/
-ENV/
-env/
+# Lo que no entra a la imagen: entornos locales, compilados y credenciales (data/ se monta como volumen)
 .git
-.gitignore
-.github
-*.log
-.pytest_cache/
-tests/
-# Muy importante: nunca quemar credenciales en la imagen
+.venv
+venv
+**/__pycache__
+**/node_modules
+frontend/dist
 .env
 .env.*
+*.pem
+*.key
+data/*
 !data/fixtures/
+orquestacion
+salidas
+ingesta
+docs
+tests
+.claude
+data/fixtures/lote_g26*
+.pytest_cache
+*.log

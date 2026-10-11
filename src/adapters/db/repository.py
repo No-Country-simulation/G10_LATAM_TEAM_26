@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 import bcrypt
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, or_
 from sqlalchemy.orm import sessionmaker
 
 from src import config
@@ -91,7 +91,7 @@ def init_db() -> None:
 def verify_user(username: str, password: str) -> Optional[User]:
     try:
         with sesion() as s:
-            usuario = s.query(User).filter(User.username == username, User.is_active.is_(True)).first()
+            usuario = s.query(User).filter(User.username == username, User.is_active == True).first()  # noqa: E712 (Oracle no acepta "IS 1")
             if usuario and bcrypt.checkpw(password.encode("utf-8"), usuario.password_hash.encode("utf-8")):
                 return usuario
     except Exception as error:
@@ -117,12 +117,23 @@ def _clave(comunidad: str, message_id: str) -> str:
     return f"{comunidad}:{message_id}"[:100]
 
 
+def _id_anterior(message_id: str) -> str:
+    """Claves de la versión anterior del panel (sin comunidad). Los ids de Discord completos se llevan a los últimos
+    6 dígitos, que es como el loader los identifica (DISC-123456)."""
+    if message_id.startswith("DISC-") and message_id[5:].isdigit() and len(message_id) > 11:
+        return f"DISC-{message_id[-6:]}"
+    return message_id
+
+
 def ids_procesados(comunidad: str) -> Set[str]:
-    """message_id (sin prefijo) de los mensajes de esa comunidad ya guardados."""
+    """message_id (sin prefijo) de los mensajes de esa comunidad ya guardados. También reconoce las filas que guardó
+    la versión anterior sin el prefijo de comunidad: esas valen para cualquier comunidad, porque no se sabe de cuál
+    eran (los ids MSG-/DISC- no se repiten entre los lotes que se usaron)."""
     prefijo = f"{comunidad}:"
     with sesion() as s:
-        filas = s.query(CommunityMessage.message_id).filter(CommunityMessage.message_id.startswith(prefijo)).all()
-    return {f[0][len(prefijo):] for f in filas}
+        filas = s.query(CommunityMessage.message_id).filter(or_(
+            CommunityMessage.message_id.startswith(prefijo), ~CommunityMessage.message_id.contains(":"))).all()
+    return {f[0][len(prefijo):] if f[0].startswith(prefijo) else _id_anterior(f[0]) for f in filas}
 
 
 def separar_nuevos(interacciones: List[Dict[str, Any]], comunidad: str) -> Tuple[List[Dict[str, Any]], int]:
@@ -214,4 +225,36 @@ def resumen_historico() -> Dict[str, Any]:
         "sentimientos": dict(Counter(se or "neutral" for _, se, _ in mensajes)),
         "canales": dict(Counter(c for _, _, c in mensajes).most_common(8)),
         "activos": dict(Counter(st for (st,) in activos)),
+    }
+
+
+def resumen_panel(umbrales: Dict[str, float], dias: int = 30) -> Dict[str, Any]:
+    """Métricas de la pestaña Resumen con todo lo guardado: mensajes por día (últimos `dias` con actividad), tipos,
+    sentimiento, canales, temas y el embudo mensaje -> oportunidad -> borrador -> aprobado."""
+    with sesion() as s:
+        mensajes = s.query(CommunityMessage.processed_at, CommunityMessage.opportunity_type,
+                           CommunityMessage.opportunity_score, CommunityMessage.sentiment, CommunityMessage.channel,
+                           CommunityMessage.topics).all()
+        activos = [a for (a,) in s.query(MarketingAsset.status).all()]
+
+    def oportunidad(tipo, score) -> bool:
+        return tipo in umbrales and (score or 0) >= umbrales[tipo]
+
+    por_dia: Dict[str, List[int]] = {}
+    for fecha, tipo, score, *_ in mensajes:
+        if fecha:
+            dia = por_dia.setdefault(fecha.strftime("%Y-%m-%d"), [0, 0])
+            dia[0] += 1
+            dia[1] += oportunidad(tipo, score)
+    temas = Counter(t.strip() for *_, topicos in mensajes for t in (topicos or "").split(",") if t.strip())
+    return {
+        "mensajes": len(mensajes),
+        "oportunidades": sum(oportunidad(t, sc) for _, t, sc, *_ in mensajes),
+        "por_dia": [{"fecha": d, "mensajes": v[0], "oportunidades": v[1]} for d, v in sorted(por_dia.items())[-dias:]],
+        "tipos": dict(Counter(t or "NONE" for _, t, *_ in mensajes).most_common()),
+        "sentimientos": dict(Counter(se or "neutral" for _, _, _, se, *_ in mensajes)),
+        "canales": dict(Counter(c for *_, c, _ in mensajes).most_common(8)),
+        "temas": dict(temas.most_common(10)),
+        "activos": dict(Counter(activos)),
+        "ultima_actividad": max((f for f, *_ in mensajes if f), default=None),
     }

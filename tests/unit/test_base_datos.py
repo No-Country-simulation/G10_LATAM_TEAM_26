@@ -68,6 +68,21 @@ def test_deduplicacion_por_comunidad(base, lote):
     assert len(nuevos) == len(interacciones) and repetidos == 0
 
 
+def test_reconoce_las_claves_de_la_version_anterior(base):
+    """Filas guardadas sin comunidad (versión anterior): cuentan como procesadas; un id de Discord completo se
+    reconoce por sus últimos 6 dígitos."""
+    base.init_db()
+    from src.adapters.db.models import CommunityMessage
+    with base.sesion() as s:
+        for mid in ("MSG-0007", "DISC-1552836674617352364", "Otra_Comunidad:MSG-0009"):
+            s.add(CommunityMessage(message_id=mid, channel="general", author_raw="x", author_anon="x",
+                                   raw_text="hola", clean_text="hola"))
+        s.commit()
+    mensajes = [{"message_id": i} for i in ("MSG-0007", "DISC-352364", "MSG-0009", "MSG-0010")]
+    nuevos, repetidos = base.separar_nuevos(mensajes, "Comunidad_A")
+    assert [m["message_id"] for m in nuevos] == ["MSG-0009", "MSG-0010"] and repetidos == 2
+
+
 def test_activos_se_registran_y_actualizan_su_estado(base, lote):
     interacciones, detalle = lote
     base.init_db()

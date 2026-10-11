@@ -56,7 +56,7 @@ El sistema adopta una arquitectura por capas modulares:
    Community Analyst → Opportunity Detector → Content Strategist
         ↓
 👁️ CAPA 3 · INTERFAZ Y CURADURÍA HUMANA
-   Dashboard Streamlit · Content Studio (Aprobar / Editar / Rechazar)
+   Panel web · Content Studio (Aprobar / Editar / Rechazar)
         ↓
 ☁️ CAPA 4 · ALMACENAMIENTO CLOUD
    OCI Object Storage — bucket trazable y persistente (Always Free)
@@ -124,7 +124,7 @@ communitylab-bucket/
 - **Lenguaje:** Python 3.11+
 - **LLM:** por definir (Google Gemini / OpenAI / Anthropic Claude)
 - **Orquestación de agentes:** por definir (LangGraph / n8n)
-- **Interfaz y curaduría:** Streamlit
+- **Interfaz y curaduría:** React (Vite) con API en FastAPI
 - **Almacenamiento:** OCI Object Storage (Always Free)
 - **Validación de datos:** Pydantic
 - **Ingesta en tiempo real (diferencial):** Discord Bot API
