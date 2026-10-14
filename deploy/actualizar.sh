@@ -12,7 +12,7 @@ docker compose --env-file .imagen.env pull
 docker compose --env-file .imagen.env up -d --remove-orphans
 
 for _ in $(seq 1 30); do
-  if curl -fs -o /dev/null http://127.0.0.1:8000/api/openapi.json; then
+  if curl -fs -o /dev/null http://127.0.0.1:8510/api/openapi.json; then
     echo "Desplegado $IMAGEN"
     docker image prune -f >/dev/null
     exit 0

@@ -5,7 +5,8 @@ services:
     image: ${IMAGEN:-ghcr.io/no-country-simulation/g10_latam_team_26:latest}
     container_name: communitylab_web
     ports:
-      - "8000:8000"
+      # Mismo puerto que la versión anterior (Streamlit), ya abierto en la Security List y en iptables
+      - "8510:8000"
     env_file:
       - .env
     volumes:
