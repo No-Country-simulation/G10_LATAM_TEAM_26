@@ -17,8 +17,8 @@ Solución impulsada por IA que transforma las conversaciones no estructuradas de
 | Jhon Giraldo | 📥 Ingesta de datos | *Pendiente* |
 | Gregory Morales | 🧠 IA / LLM | [linkedin.com/in/gregory-morales](https://www.linkedin.com/in/gregory-morales-50827428a/) |
 | Axel Cañete | 🧠 IA / LLM | [py.linkedin.com/in/axel-cañete](https://py.linkedin.com/in/axel-ca%C3%B1ete-a95688299) |
-| Anthony Uceda | 🖥️ Frontend (Streamlit) | [linkedin.com/in/anthony-frank-uceda-alfaro](https://www.linkedin.com/in/anthony-frank-uceda-alfaro-141b21394/) |
-| Álvaro | 🖥️ Frontend (Streamlit) | *Pendiente* |
+| Anthony Uceda | 🖥️ Frontend | [linkedin.com/in/anthony-frank-uceda-alfaro](https://www.linkedin.com/in/anthony-frank-uceda-alfaro-141b21394/) |
+| Álvaro | 🖥️ Frontend | *Pendiente* |
 | Zurian | ☁️ Cloud / OCI | *Pendiente* |
 | Celeste Box | 📥 Ingesta de datos | [linkedin.com/in/incbox](https://linkedin.com/in/incbox) |
 | Hernan | *Por definir* | *Pendiente* |
@@ -56,10 +56,10 @@ Los contratos de datos entre módulos están definidos en [`spec.md`](spec.md).
 
 ```mermaid
 flowchart TD
-    A["📥 FUENTES DE DATOS<br/>Discord (tiempo real) · JSON / CSV (lote)"] --> B
+    A["📥 FUENTES DE DATOS<br/>Discord (bajo demanda) · JSON / CSV (lote)"] --> B
     B["🧹 INGESTIÓN Y PREPROCESAMIENTO<br/>Normalización · Limpieza · Anonimización"] --> C
     C["🧠 MOTOR MULTIAGENTE (LangGraph)<br/>Análisis · Detección de oportunidades · Redacción por canal"] --> D
-    D["👁️ CURADURÍA HUMANA<br/>Panel Streamlit: salud de la comunidad, revisión y aprobación"] --> E
+    D["👁️ CURADURÍA HUMANA<br/>Panel web: salud de la comunidad, revisión y aprobación"] --> E
     E["☁️ ALMACENAMIENTO CLOUD<br/>OCI Object Storage (Always Free)"]
 ```
 
@@ -72,10 +72,11 @@ G10_LATAM_TEAM_26/
 │   ├── domain/    # Contratos de datos (Pydantic)
 │   ├── adapters/  # Ingesta, proveedores de IA y almacenamiento en la nube
 │   ├── core/      # Motor multiagente (grafo LangGraph)
-│   ├── ui/        # Panel de curaduría (Streamlit)
+│   ├── api/       # API del panel (FastAPI)
 │   └── utils/     # Anonimización, texto y logs
+├── frontend/      # Panel de curaduría (React)
 ├── tests/         # Pruebas con pytest
-├── run_app.py     # Punto de entrada del panel
+├── Dockerfile     # Imagen única: panel y API en un solo puerto
 └── spec.md        # Contratos de datos entre módulos
 ```
 
@@ -83,7 +84,7 @@ G10_LATAM_TEAM_26/
 
 ## ✨ Funcionalidades
 
-- **Ingesta** por lote (JSON o CSV) o en tiempo real desde Discord, con anonimización de datos personales.
+- **Ingesta** por lote (JSON o CSV) o desde Discord bajo demanda (canales e hilos, solo lo nuevo en cada lectura), con anonimización de datos personales.
 - **Análisis con IA** de sentimiento, temas y tipo de cada mensaje.
 - **Detección de oportunidades** de contenido: historias de éxito, logros y dudas frecuentes.
 - **Generación de borradores** para LinkedIn, newsletter y FAQ, con el tono de cada canal.
@@ -99,14 +100,12 @@ POST-034 (LinkedIn)  →  OPP-021 (Oportunidad)  →  MSG-8921 (#logros / Discor
 
 ## ☁️ Almacenamiento en OCI
 
-Los paquetes de activos se guardan en **OCI Object Storage (capa Always Free)**, organizados por etapa y fecha:
+Los mensajes analizados y los activos curados se registran en **OCI Autonomous Database**, que también evita volver a analizar lo que ya se procesó. Los archivos se guardan en **OCI Object Storage**, organizados por etapa y fecha (todo en la capa Always Free):
 
 ```
 communitylab-bucket/
-├── raw/YYYY-MM-DD/        # Datos tal como llegaron
-├── processed/YYYY-MM-DD/  # Datos limpios y analizados
-├── generated/YYYY-MM-DD/  # Paquetes de activos generados
-└── reports/YYYY-MM-DD/    # Reportes de salud comunitaria
+├── raw/YYYY-MM-DD/        # Mensajes leídos de Discord, tal como llegaron
+└── generated/YYYY-MM-DD/  # Paquetes de activos curados y sus imágenes
 ```
 
 ---
@@ -115,13 +114,14 @@ communitylab-bucket/
 
 | Componente | Tecnología |
 |---|---|
-| Lenguaje | Python 3.11+ |
+| Lenguaje | Python 3.12 · TypeScript |
 | Modelos de lenguaje | Google Gemini y Groq |
 | Orquestación de agentes | LangGraph + LangChain |
-| Interfaz y curaduría | Streamlit |
-| Almacenamiento | OCI Object Storage (Always Free) |
+| Interfaz y curaduría | React (Vite) |
+| API del panel | FastAPI |
+| Almacenamiento | OCI Object Storage y Autonomous Database (Always Free) |
 | Validación de datos | Pydantic |
-| Ingesta en tiempo real | Discord Bot API |
+| Ingesta de Discord | Discord API (REST) |
 | Pruebas y despliegue local | pytest · Docker |
 
 ---
@@ -133,26 +133,30 @@ communitylab-bucket/
 git clone https://github.com/No-Country-simulation/G10_LATAM_TEAM_26.git
 cd G10_LATAM_TEAM_26
 
-# 2. Crear entorno virtual e instalar dependencias
+# 2. Configurar credenciales (IA, Discord, OCI y acceso al panel)
+cp .env.example .env
+
+# 3. Levantar el panel y la API con Docker (http://localhost:8000)
+docker compose up --build
+```
+
+Las credenciales de OCI (wallet y llave `.pem`) van dentro de `data/`, que el contenedor monta como volumen; nunca entran a la imagen ni al repositorio.
+
+Desarrollo local sin Docker:
+
+```bash
 python -m venv .venv
 source .venv/bin/activate        # En Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-# 3. Configurar credenciales (API keys de IA y acceso al panel)
-cp .env.example .env
+# Front: compilar una vez (o "npm run dev" para trabajar con recarga en http://localhost:5173)
+cd frontend && npm install && npm run build && cd ..
 
-# 4. Levantar el panel de curaduría (http://localhost:8501)
-streamlit run run_app.py
-```
+# API y panel (http://localhost:8000)
+uvicorn src.api.app:app --port 8000
 
-Otras formas de ejecutarlo:
-
-```bash
 # Procesar un lote por línea de comandos (--simulado funciona sin API keys)
 python -m src.cli data/fixtures/lote_ejemplo_formato_a.json --simulado
-
-# Panel con Docker (http://localhost:8510)
-docker compose up --build
 
 # Pruebas
 python -m pytest -q

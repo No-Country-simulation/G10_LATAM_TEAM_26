@@ -18,7 +18,7 @@ Este documento define las **interfaces JSON entre los módulos del sistema**. Es
 **Mapa de formatos en el pipeline:**
 
 ```
-[Ingesta] ──Formato A──> [Núcleo IA/Orquestación] ──Formato B──> [OCI Storage] ──> [Panel Streamlit]
+[Ingesta] ──Formato A──> [Núcleo IA/Orquestación] ──Formato B──> [OCI Storage] ──> [Panel web]
                                     │
                           (Formato P: análisis por mensaje,
                            interno del núcleo)

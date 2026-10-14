@@ -1,0 +1,15 @@
+# Compose de producción en la VM de OCI: usa la imagen que CI publica en GHCR (no compila en el servidor).
+# El workflow lo copia a ~/communitylab/docker-compose.yml y fija IMAGEN al commit desplegado (.imagen.env).
+services:
+  web:
+    image: ${IMAGEN:-ghcr.io/no-country-simulation/g10_latam_team_26:latest}
+    container_name: communitylab_web
+    ports:
+      # Mismo puerto que la versión anterior (Streamlit), ya abierto en la Security List y en iptables
+      - "8510:8000"
+    env_file:
+      - .env
+    volumes:
+      # Wallet y llave .pem de OCI, capturas, paquetes, caché y base SQLite de contingencia
+      - ./data:/app/data
+    restart: unless-stopped

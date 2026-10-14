@@ -68,6 +68,22 @@ class ObjectStorageAdapter:
         self.client.put_object(namespace_name=self.namespace, bucket_name=self.bucket_name,
                                object_name=ruta_objeto, put_object_body=datos, content_type=tipo)
 
+    def subir(self, ruta_objeto: str, datos: bytes, tipo: str = "application/octet-stream") -> None:
+        self._subir(ruta_objeto, datos, tipo)
+
+    def listar(self, prefijo: str) -> list:
+        """Nombres de los objetos del bucket que empiezan con `prefijo` (todas las páginas)."""
+        nombres, inicio = [], None
+        while True:
+            r = self.client.list_objects(self.namespace, self.bucket_name, prefix=prefijo, start=inicio, limit=1000)
+            nombres += [o.name for o in r.data.objects]
+            inicio = r.data.next_start_with
+            if not inicio:
+                return nombres
+
+    def leer(self, ruta_objeto: str) -> bytes:
+        return self.client.get_object(self.namespace, self.bucket_name, ruta_objeto).data.content
+
     def _subir_imagenes(self, paquete: Dict[str, Any]) -> int:
         carpeta = Path(paquete["almacenamiento_oci"]["ruta_objeto"]).parent.as_posix()
         subidas = 0

@@ -1,44 +1,33 @@
-# 1. Imagen base oficial ligera de Python
-FROM python:3.11-slim
+# CommunityLab AI: front en React y API en FastAPI, servidos juntos en un solo puerto.
 
-# 2. Variables de entorno estándar para ejecución de Python y Streamlit
+# 1. Compila el front (frontend/dist)
+FROM node:20-alpine AS front
+WORKDIR /front
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY frontend/ ./
+RUN npm run build
+
+# 2. API en Python, que además sirve el front compilado
+FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    STREAMLIT_SERVER_PORT=8501 \
-    STREAMLIT_SERVER_ADDRESS=0.0.0.0 \
-    STREAMLIT_SERVER_HEADLESS=true \
-    STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
-
-# 3. Instalar curl y herramientas de compilación para librerías como OCI / Crypto
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
-# 4. Directorio de trabajo
+    PIP_NO_CACHE_DIR=1
 WORKDIR /app
 
-# 5. Instalar dependencias aprovechando la caché
 COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# 6. Copiar el código de la aplicación
-COPY . .
+COPY src/ src/
+COPY data/fixtures/ data/fixtures/
+COPY --from=front /front/dist frontend/dist
 
-# 7. Crear usuario sin privilegios y asegurar permisos en carpetas de datos y runtime
-RUN useradd -m -u 1000 appuser && \
-    mkdir -p /app/data/raw /app/data/processed /app/data/fixtures && \
-    chown -R appuser:appuser /app
+# Usuario sin privilegios; data/ se monta como volumen (credenciales de OCI, capturas, paquetes, base local)
+RUN useradd -m -u 1000 app && mkdir -p data/raw data/processed data/cache && chown -R app:app /app
+USER app
 
-USER appuser
+EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/openapi.json', timeout=4)"
 
-# 8. Exponer el puerto
-EXPOSE 8501
-
-# 9. Healthcheck del servicio Streamlit
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8501/_stcore/health || exit 1
-
-# 10. Comando de ejecución limpio (usa las variables de entorno definidas arriba)
-CMD ["streamlit", "run", "run_app.py"]
+CMD ["uvicorn", "src.api.app:app", "--host", "0.0.0.0", "--port", "8000"]

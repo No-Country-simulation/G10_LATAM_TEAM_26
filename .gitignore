@@ -36,3 +36,10 @@ data/processed/
 
 # Base SQLite local de contingencia
 data/*.db
+
+# Front web (React): dependencias y compilado
+frontend/node_modules/
+frontend/dist/
+
+# Comunidades de Discord agregadas desde el panel (incluye sus tokens) y lo leído de cada una
+data/discord/
