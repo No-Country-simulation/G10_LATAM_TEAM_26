@@ -118,11 +118,13 @@ jobs:
           else
             ssh-keyscan -H "$OCI_HOST" > ~/.ssh/known_hosts 2>/dev/null
           fi
-      - name: Copiar compose de producción
+      - name: Copiar compose de producción y datos de ejemplo
         if: steps.secretos.outputs.listo == 'true'
+        # data/ del servidor se monta sobre /app/data y tapa los fixtures de la imagen: se copian al volumen
         run: |
-          ssh -i ~/.ssh/id_oci "$OCI_USER@$OCI_HOST" "mkdir -p ~/$DIR_APP/data"
+          ssh -i ~/.ssh/id_oci "$OCI_USER@$OCI_HOST" "mkdir -p ~/$DIR_APP/data/fixtures"
           scp -i ~/.ssh/id_oci deploy/docker-compose.prod.yml "$OCI_USER@$OCI_HOST:~/$DIR_APP/docker-compose.yml"
+          tar -C data/fixtures --exclude='lote_g26*' -cf - . | ssh -i ~/.ssh/id_oci "$OCI_USER@$OCI_HOST" "tar -C ~/$DIR_APP/data/fixtures -xf -"
       - name: Actualizar contenedor
         if: steps.secretos.outputs.listo == 'true'
         # La VM descarga la imagen de GHCR con su propio acceso (paquete público o login hecho una vez en el
