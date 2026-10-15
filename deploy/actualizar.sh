@@ -1,11 +1,21 @@
 #!/usr/bin/env bash
 # Corre en la VM de OCI (lo invoca el workflow por SSH desde ~/communitylab): baja la imagen IMAGEN,
-# reinicia el contenedor y espera a que la API responda. También sirve a mano:
-#   cd ~/communitylab && IMAGEN=ghcr.io/no-country-simulation/g10_latam_team_26:latest bash actualizar.sh
+# reinicia el contenedor y espera a que la API responda. También sirve a mano (el workflow deja una copia en
+# ~/communitylab; a mano usa el login de ghcr.io que tenga la VM, si lo hay):
+#   cd ~/communitylab && IMAGEN=ghcr.io/no-country-simulation/g10_latam_team_26:<sha> bash actualizar.sh
 set -euo pipefail
 
 : "${IMAGEN:?Falta IMAGEN}"
 test -f .env || { echo "Falta $(pwd)/.env en el servidor (ver docs/despliegue-oci.md)"; exit 1; }
+
+# Desde el workflow llega GHCR_USER y el token temporal de GitHub Actions por stdin: el login se hace en una
+# configuración de Docker temporal que se borra al salir, así que en la VM no queda ninguna credencial
+if [ -n "${GHCR_USER:-}" ]; then
+  DOCKER_CONFIG=$(mktemp -d)
+  export DOCKER_CONFIG
+  trap 'rm -rf "$DOCKER_CONFIG"' EXIT
+  docker login ghcr.io -u "$GHCR_USER" --password-stdin >/dev/null
+fi
 
 echo "IMAGEN=$IMAGEN" > .imagen.env
 

@@ -87,6 +87,10 @@ jobs:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: produccion
+    permissions:
+      contents: read
+      # El GITHUB_TOKEN de este job sirve para que la VM baje la imagen privada de GHCR (ver "Actualizar contenedor")
+      packages: read
     env:
       OCI_HOST: ${{ secrets.OCI_HOST }}
       OCI_USER: ${{ secrets.OCI_USER }}
@@ -124,11 +128,15 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_oci "$OCI_USER@$OCI_HOST" "mkdir -p ~/$DIR_APP/data/fixtures"
           scp -i ~/.ssh/id_oci deploy/docker-compose.prod.yml "$OCI_USER@$OCI_HOST:~/$DIR_APP/docker-compose.yml"
+          scp -i ~/.ssh/id_oci deploy/actualizar.sh "$OCI_USER@$OCI_HOST:~/$DIR_APP/actualizar.sh"
           tar -C data/fixtures --exclude='lote_g26*' -cf - . | ssh -i ~/.ssh/id_oci "$OCI_USER@$OCI_HOST" "tar -C ~/$DIR_APP/data/fixtures -xf -"
       - name: Actualizar contenedor
         if: steps.secretos.outputs.listo == 'true'
-        # La VM descarga la imagen de GHCR con su propio acceso (paquete público o login hecho una vez en el
-        # servidor); ningún token de GitHub Actions sale hacia la VM.
+        # El paquete de GHCR es privado (la organización no permite publicarlo). El GITHUB_TOKEN de este job viaja por
+        # stdin, nunca en la línea de comandos; la VM lo usa en una configuración de Docker temporal que se borra al
+        # terminar, y GitHub lo invalida cuando acaba el job: en la VM no queda ninguna credencial guardada.
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ssh -i ~/.ssh/id_oci "$OCI_USER@$OCI_HOST" \
-            "cd ~/$DIR_APP && IMAGEN='$IMAGEN' bash -s" < deploy/actualizar.sh
+          printf '%s' "$GHCR_TOKEN" | ssh -i ~/.ssh/id_oci "$OCI_USER@$OCI_HOST" \
+            "cd ~/$DIR_APP && IMAGEN='$IMAGEN' GHCR_USER='${{ github.actor }}' bash actualizar.sh"
