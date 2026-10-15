@@ -165,6 +165,10 @@ class DiscordAPI:
         except (FileNotFoundError, json.JSONDecodeError):
             cursores = {}
         canales = self.canales()
+        borrados = self._quitar_borrados(archivo, canales)
+        if almacen is not None and borrados:  # el bucket no se reescribe: una marca evita recuperarlos después
+            _subir(almacen, "".join(json.dumps({"id": i, "borrado": True}) + "\n" for i in borrados).encode("utf-8"),
+                   "borrados", prefijo)
         with ThreadPoolExecutor(max_workers=4) as pool:
             leidos = list(pool.map(lambda c: (c["id"], *self.leer_canal(c, despues=cursores.get(c["id"]))), canales))
         lineas = []
@@ -182,8 +186,35 @@ class DiscordAPI:
         if almacen is not None and lineas:
             en_oci = _subir(almacen, ("\n".join(lineas) + "\n").encode("utf-8"), str(len(lineas)), prefijo)
         logger.info(f"Discord: {len(lineas)} mensajes nuevos de {len(canales)} canales e hilos"
+                    + (f", {len(borrados)} borrados en Discord" if borrados else "")
                     + (f", copia en {en_oci}" if en_oci else ""))
-        return {"nuevos": len(lineas), "canales": len(canales), "en_oci": en_oci, "recuperados": recuperados}
+        return {"nuevos": len(lineas), "canales": len(canales), "en_oci": en_oci, "recuperados": recuperados,
+                "borrados": borrados}
+
+    def _quitar_borrados(self, archivo: Path, canales: List[Dict[str, Any]]) -> List[str]:
+        """Quita de las capturas los mensajes que se borraron en Discord y devuelve sus ids. Por cada canal compara lo
+        guardado con sus últimos LIMITE_POR_CANAL mensajes: lo que cae dentro de ese tramo y ya no está, se borró.
+        Un canal que hoy no se puede leer (sin permiso, límite de consultas) no se toca."""
+        if not archivo.exists():
+            return []
+        registros = [json.loads(l) for l in archivo.read_text(encoding="utf-8").splitlines() if l.strip()]
+        guardados = {(r.get("channel") or {}).get("id") for r in registros}
+        borrados: set = set()
+        for canal in (c for c in canales if c["id"] in guardados):
+            recientes = self._paginas(canal, LIMITE_POR_CANAL, None)
+            if not recientes:
+                continue
+            vivos = {m["id"] for m in recientes}
+            # Si el canal tiene menos mensajes que el tramo, el tramo es el canal entero
+            desde = 0 if len(recientes) < LIMITE_POR_CANAL else min(int(i) for i in vivos)
+            borrados |= {r["id"] for r in registros if (r.get("channel") or {}).get("id") == canal["id"]
+                         and int(r["id"]) >= desde and r["id"] not in vivos}
+        if borrados:
+            temporal = archivo.with_suffix(".tmp")
+            temporal.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in registros
+                                        if r["id"] not in borrados), encoding="utf-8")
+            temporal.replace(archivo)
+        return sorted(borrados, key=int)
 
 
 def _subir(almacen: Any, datos: bytes, sufijo: str, prefijo: str = "discord") -> Optional[str]:
@@ -208,6 +239,8 @@ def _recuperar(almacen: Any, carpeta: Path, prefijo: str = "discord") -> int:
     except Exception as error:
         logger.warning(f"No se pudo recuperar Discord desde OCI ({type(error).__name__}: {error})")
         return 0
+    borrados = {r["id"] for r in registros if r.get("borrado")}  # marcas de mensajes borrados en Discord
+    registros = [r for r in registros if not r.get("borrado") and r["id"] not in borrados]
     if not registros:
         return 0
     cursores: Dict[str, str] = {}

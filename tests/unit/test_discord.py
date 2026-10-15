@@ -123,6 +123,44 @@ def test_sincronizar_trae_solo_lo_nuevo(tmp_path, monkeypatch):
     assert len(payload.interacciones) == 3  # sin repetidos
 
 
+def test_actualizar_quita_lo_borrado_en_discord_y_no_lo_recupera_del_bucket(tmp_path, monkeypatch):
+    monkeypatch.delenv("SERVIDORES_OBSERVADOS", raising=False)
+    monkeypatch.delenv("CANALES_OBSERVADOS", raising=False)
+    sesion, bucket = _SesionFalsa(), _BucketFalso()
+    sesion.general.append(_mensaje("102", "lo voy a borrar", autor="greg"))
+    api = DiscordAPI("token-falso", sesion)
+    assert api.sincronizar(tmp_path / "a", almacen=bucket)["nuevos"] == 3
+
+    sesion.general = [m for m in sesion.general if m["id"] != "102"]  # se borra en Discord
+    resumen = api.sincronizar(tmp_path / "a", almacen=bucket)
+    assert resumen["borrados"] == ["102"] and resumen["nuevos"] == 0
+    textos = [m.texto for m in load_discord_raw_stream(str(tmp_path / "a")).interacciones]
+    assert "lo voy a borrar" not in textos and len(textos) == 2
+    assert api.sincronizar(tmp_path / "a", almacen=bucket)["borrados"] == []  # ya no hay nada que quitar
+
+    # Un servidor con el disco vacío recupera del bucket, pero respeta la marca de borrado
+    resumen = api.sincronizar(tmp_path / "b", almacen=bucket)
+    assert resumen["recuperados"] == 2
+    assert "lo voy a borrar" not in [m.texto for m in load_discord_raw_stream(str(tmp_path / "b")).interacciones]
+
+
+def test_un_canal_que_no_se_puede_leer_no_pierde_lo_guardado(tmp_path, monkeypatch):
+    monkeypatch.delenv("SERVIDORES_OBSERVADOS", raising=False)
+    monkeypatch.delenv("CANALES_OBSERVADOS", raising=False)
+    sesion = _SesionFalsa()
+    api = DiscordAPI("token-falso", sesion)
+    api.sincronizar(tmp_path)
+    original = sesion.get
+
+    def sin_permiso_en_general(url, params=None, timeout=None, headers=None):
+        if url.endswith("/channels/10/messages"):
+            return _Respuesta(403, {"code": 50001})
+        return original(url, params, timeout, headers)
+    sesion.get = sin_permiso_en_general
+    assert api.sincronizar(tmp_path)["borrados"] == []
+    assert len(load_discord_raw_stream(str(tmp_path)).interacciones) == 2
+
+
 def test_api_filtra_canales_y_sin_token_no_consulta(monkeypatch):
     monkeypatch.setenv("CANALES_OBSERVADOS", "privado")
     assert DiscordAPI("token-falso", _SesionFalsa()).mensajes_recientes() == []
