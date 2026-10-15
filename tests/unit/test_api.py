@@ -108,6 +108,17 @@ def test_comunidades_de_discord_solo_admin_y_sin_token(cliente, cabeceras, tmp_p
     assert cliente.delete(f"/api/discord/comunidades/{lista[-1]['id']}", headers=cabeceras).status_code == 200
 
 
+def test_discord_sin_token_lo_dice_en_vez_de_aparentar_canales_vacios(cliente, cabeceras, tmp_path, monkeypatch):
+    from src.adapters.ingestion import discord_comunidades as comunidades
+    monkeypatch.setenv("DISCORD_BOT_TOKEN", "")
+    original = comunidades._principal
+    monkeypatch.setattr(comunidades, "_principal", lambda: {**original(), "raw_dir": tmp_path})  # sin capturas previas
+    r = cliente.post("/api/dataset/fuente", headers=cabeceras, json={"fuente": "discord", "comunidad": "principal"})
+    assert r.status_code == 200
+    assert "DISCORD_BOT_TOKEN" in r.json()["aviso"] and "no tiene mensajes" not in r.json()["aviso"]
+    cliente.post("/api/dataset/fuente", headers=cabeceras, json={"fuente": "estandar"})
+
+
 def test_analizar_n_toma_los_siguientes_pendientes(monkeypatch):
     """Si los primeros mensajes del lote ya se analizaron, "analizar 5" toma los 5 siguientes que faltan."""
     from src.api import espacio as modulo
