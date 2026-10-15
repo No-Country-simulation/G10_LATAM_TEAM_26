@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react";
 import { createPortal } from "react-dom";
-import marca from "../recursos/login-marca.png";
+import marca from "../recursos/logo.svg";
 
 // Piezas de marca de CommunityLab AI: el símbolo, la red de conversaciones (el motivo de la pantalla de ingreso)
 // y la portada de cada etapa, que se dibuja dentro de la franja azul marino del encabezado.
