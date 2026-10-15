@@ -149,7 +149,9 @@ def test_login_deja_una_cookie_httponly_y_logout_la_borra(cliente):
     assert f"{COOKIE}={r.json()['token']}".lower() in cookie
     assert "httponly" in cookie and "samesite=strict" in cookie and "path=/api" in cookie
     assert "secure" not in cookie  # por HTTP plano (desarrollo) no se marca Secure
-    out = cliente.post("/api/logout", headers={"Authorization": f"Bearer {r.json()['token']}"})
+    # Sin plazo propio: si caducara a las SESION_HORAS del login, una sesión activa se quedaría sin imágenes
+    assert "max-age" not in cookie and "expires" not in cookie
+    out =cliente.post("/api/logout", headers={"Authorization": f"Bearer {r.json()['token']}"})
     assert out.status_code == 200 and "max-age=0" in out.headers["set-cookie"].lower()
 
 

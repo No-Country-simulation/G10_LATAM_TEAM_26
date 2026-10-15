@@ -183,10 +183,11 @@ def login(datos: Credenciales, request: Request, response: Response):
     token = secrets.token_urlsafe(32)
     SESIONES[token] = Espacio(*resultado)
     _ULTIMO_USO[token] = time.time()
-    # Secure cuando el panel va por HTTPS (directo o detrás de Caddy/nginx, que mandan X-Forwarded-Proto)
+    # Secure cuando el panel va por HTTPS (directo o detrás de Caddy/nginx, que mandan X-Forwarded-Proto).
+    # Sin max_age: la caducidad la controla el servidor (_sesion, renovada con cada uso); un plazo fijo desde el
+    # login borraba la cookie a las SESION_HORAS aunque la sesión siguiera activa y las imágenes daban 401
     https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto", "") == "https"
-    response.set_cookie(COOKIE_SESION, token, max_age=int(config.SESION_HORAS * 3600), path="/api",
-                        httponly=True, samesite="strict", secure=https)
+    response.set_cookie(COOKIE_SESION, token, path="/api", httponly=True, samesite="strict", secure=https)
     return {"token": token, "usuario": resultado[0], "rol": resultado[1]}
 
 
