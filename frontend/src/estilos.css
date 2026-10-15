@@ -349,6 +349,18 @@ dialog.dialogo-ancho { width: min(520px, calc(100vw - 32px)); }
 .borrador .titulo { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .borrador .meta { grid-column: 2 / 4; font-size: 12.5px; color: var(--tinta-3); }
 .borrador .sc { font-size: 13px; color: var(--tinta-2); font-variant-numeric: tabular-nums; }
+.borrador .sin-guardar { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: var(--aviso); vertical-align: middle; }
+
+/* Aviso de ediciones sin guardar y contador de caracteres del post de LinkedIn */
+.aviso-cambios { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.aviso-cambios > span { flex: 1 1 380px; }
+.contador { margin: 0; font-size: 13px; color: var(--tinta-2); }
+.contador.cerca { color: var(--aviso); font-weight: 600; }
+.contador.excedido { color: var(--negativo); font-weight: 650; }
+
+/* Conexión perdida con el servidor (la consulta se reintenta sola) */
+.banner-conexion { position: sticky; top: 0; z-index: 60; display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 9px 16px; background: var(--aviso-f); color: var(--tinta); border-bottom: 1px solid var(--aviso); font-size: 14px; }
 
 .editor { display: grid; gap: 18px; }
 .fuente-cita { padding: 18px 22px; border-left: 3px solid var(--acento); background: var(--papel); border-radius: 0 12px 12px 0; }
@@ -694,3 +706,23 @@ dialog form { display: grid; gap: 14px; padding: 22px; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 .boton.com-agregar { padding-inline: 0; color: var(--acento); justify-self: start; }
+
+/* Resumen: tasa de aprobación por tipo y por rango de score */
+.aprobacion-dos { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.aprobacion-sub { margin: 0 0 8px; font-size: 13.5px; font-weight: 600; color: var(--tinta-2); }
+@media (max-width: 760px) { .aprobacion-dos { grid-template-columns: 1fr; gap: 18px; } }
+
+/* Curaduría: atajos de teclado, aprobación en lote y texto solo para lectores de pantalla */
+kbd { display: inline-block; min-width: 1.5em; padding: 1px 6px; border: 1px solid var(--linea); border-bottom-width: 2px;
+  border-radius: 5px; background: var(--papel); color: var(--tinta); font: 600 12px/1.5 var(--sans); text-align: center; }
+.atajos ul { margin: 0 0 6px; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px 22px; }
+.atajos p { margin: 0; font-size: 13px; }
+.lote { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; font-size: 14px; color: var(--tinta-2); }
+.lote .entrada { width: auto; padding: 6px 10px; font-size: 14px; }
+.aviso-deshacer { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 70; display: flex; align-items: center;
+  gap: 14px; max-width: min(560px, calc(100vw - 32px)); padding: 10px 14px 10px 18px; border-radius: 12px; background: var(--marino);
+  color: #fff; box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.45); font-size: 14px; }
+.aviso-deshacer span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aviso-deshacer .boton { white-space: nowrap; }
+.sr-solo { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0);
+  white-space: nowrap; border: 0; }

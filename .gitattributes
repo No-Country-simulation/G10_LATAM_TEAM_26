@@ -1,0 +1,14 @@
+# Finales de línea: el repositorio guarda LF y cada quien trabaja con los de su sistema.
+# Evita las modificaciones fantasma en "git status" entre Windows y Linux/macOS.
+* text=auto eol=lf
+
+# Scripts de shell: siempre LF (con CRLF fallan en el servidor)
+*.sh text eol=lf
+
+# Binarios: sin conversión
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
+*.zip binary

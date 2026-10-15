@@ -124,6 +124,7 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_oci "$OCI_USER@$OCI_HOST" "mkdir -p ~/$DIR_APP/data/fixtures"
           scp -i ~/.ssh/id_oci deploy/docker-compose.prod.yml "$OCI_USER@$OCI_HOST:~/$DIR_APP/docker-compose.yml"
+          scp -i ~/.ssh/id_oci deploy/Caddyfile "$OCI_USER@$OCI_HOST:~/$DIR_APP/Caddyfile"
           tar -C data/fixtures --exclude='lote_g26*' -cf - . | ssh -i ~/.ssh/id_oci "$OCI_USER@$OCI_HOST" "tar -C ~/$DIR_APP/data/fixtures -xf -"
       - name: Actualizar contenedor
         if: steps.secretos.outputs.listo == 'true'

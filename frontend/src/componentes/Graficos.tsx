@@ -112,6 +112,38 @@ export function Barras({ datos, total, unidad = "mensajes" }: {
   );
 }
 
+/** Con menos decisiones que esto, la tasa de un grupo se muestra atenuada y con aviso: un 100 % de 2 no dice nada. */
+const MIN_DECISIONES = 5;
+
+/** Porcentaje de aprobación de cada grupo (aprobados / decididos); los pendientes no cuentan para la tasa. */
+export function TasaAprobacion({ grupos }: {
+  grupos: { etiqueta: string; aprobados: number; descartados: number; pendientes: number }[];
+}) {
+  return (
+    <ul className="barras">
+      {grupos.map((g) => {
+        const decididos = g.aprobados + g.descartados;
+        const tasa = decididos ? g.aprobados / decididos : 0;
+        const pocas = decididos < MIN_DECISIONES;
+        const resumen = decididos
+          ? `${Math.round(tasa * 100)} % aprobado (${g.aprobados} de ${decididos} decididos)${pocas ? ", pocas decisiones para fiarse" : ""}`
+          : "sin decisiones todavía";
+        const texto = `${g.etiqueta}: ${resumen}${g.pendientes ? `; ${g.pendientes} por revisar` : ""}`;
+        return (
+          <li key={g.etiqueta} tabIndex={0} data-tip={texto} aria-label={texto}>
+            <span className="barra-etiqueta">{g.etiqueta}</span>
+            <span className="barra-pista">
+              <i className={pocas ? "tenue" : ""} style={{ width: `calc((100% - 76px) * ${tasa})` }} />
+              <b className="num">{decididos ? `${Math.round(tasa * 100)} %` : "—"}
+                <small> {decididos ? `${g.aprobados}/${decididos}` : `${g.pendientes} pend.`}</small></b>
+            </span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 /** Escala ordenada negativo -> neutral -> positivo, en una sola barra al 100%. */
 export function BarraSentimiento({ negativo, neutral, positivo }: { negativo: number; neutral: number; positivo: number }) {
   const total = negativo + neutral + positivo || 1;

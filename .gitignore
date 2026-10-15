@@ -9,9 +9,16 @@ oci_api_key*
 # Credenciales de OCI Autonomous Database (wallet mTLS): se copia en local, nunca al repositorio
 data/wallet/
 data/Wallet_*/
+Wallet_*/
 *.p12
+*.pfx
 *.sso
 *.jks
+tnsnames.ora
+sqlnet.ora
+
+# Configuración y llaves de OCI de cada persona (~/.oci copiado al proyecto)
+.oci/
 
 # Python
 __pycache__/
@@ -43,3 +50,9 @@ frontend/dist/
 
 # Comunidades de Discord agregadas desde el panel (incluye sus tokens) y lo leído de cada una
 data/discord/
+
+# Archivos generados por el compilado del front (no son código fuente)
+*.tsbuildinfo
+
+# Preferencias locales de Claude Code (launch.json sí se comparte)
+.claude/settings.local.json

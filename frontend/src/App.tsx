@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, guardarSesion, sesionGuardada, usarToken } from "./api";
+import { useConexion } from "./conexion";
 import { plural } from "./etiquetas";
 import type { Analisis, Dataset, Sesion, Sistema } from "./tipos";
 import { Ingreso } from "./vistas/Ingreso";
@@ -61,18 +62,32 @@ function Consola({ sesion, alSalir }: { sesion: Sesion; alSalir: () => void }) {
     return () => window.removeEventListener("hashchange", alCambiar);
   }, []);
 
-  useEffect(() => {
-    api.get<Sistema>("/sistema").then(setSistema).catch(() => {});
-    api.get<Dataset>("/dataset").then(setDataset).catch(() => {});
-  }, []);
+  // Si una consulta falla (servidor caído o reiniciándose) se avisa en pantalla y se reintenta sola
+  const { sinConexion, exito, falla } = useConexion();
 
-  const actualizar = useCallback(async () => {
+  const cargarSistema: () => void = useCallback(() => {
+    api.get<Sistema>("/sistema").then((s) => { setSistema(s); exito("sistema"); })
+      .catch((err) => falla("sistema", err, cargarSistema));
+  }, [exito, falla]);
+
+  const cargarDataset: () => void = useCallback(() => {
+    api.get<Dataset>("/dataset").then((d) => { setDataset(d); exito("dataset"); })
+      .catch((err) => falla("dataset", err, cargarDataset));
+  }, [exito, falla]);
+
+  useEffect(() => {
+    cargarSistema();
+    cargarDataset();
+  }, [cargarSistema, cargarDataset]);
+
+  const actualizar: () => Promise<void> = useCallback(async () => {
     try {
       setAnalisis(await api.get<Analisis>("/analisis"));
-    } catch {
-      /* el siguiente ciclo lo reintenta */
+      exito("analisis");
+    } catch (err) {
+      falla("analisis", err, actualizar); // antes se tragaba el error y el sondeo se detenía para siempre
     }
-  }, []);
+  }, [exito, falla]);
 
   // Mientras el motor trabaja en segundo plano, el estado se consulta seguido; en reposo, no.
   useEffect(() => {
@@ -87,13 +102,18 @@ function Consola({ sesion, alSalir }: { sesion: Sesion; alSalir: () => void }) {
 
   // Al terminar un análisis, el lote se vuelve a pedir para saber qué mensajes ya quedaron analizados en la base
   useEffect(() => {
-    if (analisis?.fase === "listo") api.get<Dataset>("/dataset").then(setDataset).catch(() => {});
-  }, [analisis?.fase]);
+    if (analisis?.fase === "listo") cargarDataset();
+  }, [analisis?.fase, cargarDataset]);
 
   const etapas = calcularEtapas(dataset, analisis);
 
   return (
     <div className="consola">
+      {sinConexion && (
+        <div className="banner-conexion" role="status">
+          <span className="cargando" aria-hidden="true" /> Se perdió la conexión con el servidor. Reintentando…
+        </div>
+      )}
       <header className="masthead">
         <RedConversaciones className="masthead-red" />
         <div className="marco masthead-interior">
@@ -138,7 +158,7 @@ function Consola({ sesion, alSalir }: { sesion: Sesion; alSalir: () => void }) {
 
       <DestinoPortada.Provider value={destino}>
         <main className="marco pagina">
-          {vista === "resumen" && <Resumen alAnalizar={() => ir("comunidad")} />}
+          {vista === "resumen" && <Resumen alAnalizar={() => ir("comunidad")} umbrales={sistema?.umbrales} />}
           {vista === "comunidad" && (
             <Comunidad dataset={dataset} analisis={analisis} sistema={sistema}
               alCambiarDataset={setDataset} alAnalizar={() => ir("clasificacion")} />

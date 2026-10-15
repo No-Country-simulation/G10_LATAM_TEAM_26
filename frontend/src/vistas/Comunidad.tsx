@@ -266,7 +266,7 @@ export function Comunidad({ dataset, analisis, sistema, alCambiarDataset, alAnal
               <Salud analisis={saludDelLote} />
             </div>
           )}
-          <Conversacion mensajes={mensajes} cargando={cargando} estadoDe={estadoDe} />
+          <Conversacion mensajes={mensajes} cargando={cargando || !dataset} estadoDe={estadoDe} />
           {historico && historico.mensajes > 0 && <HistoricoBase historico={historico} />}
         </section>
       </div>
@@ -313,7 +313,8 @@ function Conversacion({ mensajes, cargando, estadoDe }: {
   if (!mensajes.length) {
     return (
       <Vacio titulo={cargando ? "Cargando mensajes…" : "Este origen no tiene mensajes"}>
-        {cargando ? "En unos segundos verás la conversación." : "Prueba con otro origen o actualiza Discord."}
+        {cargando ? "En unos segundos verás la conversación. Si tarda, revisa el aviso de conexión de arriba."
+          : "Prueba con otro origen o actualiza Discord."}
       </Vacio>
     );
   }
