@@ -5,11 +5,34 @@ services:
     image: ${IMAGEN:-ghcr.io/no-country-simulation/g10_latam_team_26:latest}
     container_name: communitylab_web
     ports:
-      # Mismo puerto que la app que ya corre en la VM (http://<IP>:8000), abierto en la Security List y en iptables
-      - "8000:8000"
+      # Mismo puerto que la app que ya corre en la VM (http://<IP>:8000), abierto en la Security List y en iptables.
+      # Con HTTPS (DOMINIO en el .env) actualizar.sh lo deja en 127.0.0.1:8000: solo el proxy llega al panel.
+      - "${WEB_PUBLICAR:-8000}:8000"
     env_file:
       - .env
     volumes:
       # Wallet y llave .pem de OCI, capturas, paquetes, caché y base SQLite de contingencia
       - ./data:/app/data
     restart: unless-stopped
+
+  # HTTPS con certificado automático. Solo corre si el .env de la VM define DOMINIO (actualizar.sh activa el perfil).
+  caddy:
+    image: caddy:2
+    profiles: ["https"]
+    container_name: communitylab_caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMINIO: ${DOMINIO:-}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data   # certificados: conservarlos evita pedirlos de nuevo en cada reinicio
+      - caddy_config:/config
+    depends_on:
+      - web
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:

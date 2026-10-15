@@ -189,6 +189,19 @@ python -m pytest -q
 | 3 | Producto completo: panel integrado con OCI, flujo de curaduría y diferenciales | 🟡 En curso |
 | 4 | Validación: métricas, video demo y presentación final | ⏳ Pendiente |
 
+### Próximos pasos
+
+Ideas que quedaron fuera de esta versión, de más a menos prioritaria:
+
+- **Consentimiento del autor.** Un estado «pendiente de consentimiento» para las historias de éxito, que destacan a una
+  persona real, con el enlace al mensaje original en Discord para pedirle permiso antes de publicar.
+- **Vista previa fiel por formato.** Hoy solo el post de LinkedIn muestra «así se verá»; faltan el newsletter y la FAQ.
+- **Estado «programado» con fecha.** Más realista a corto plazo que publicar por la API de LinkedIn, que exige aprobación.
+- **Detección de tendencias** (caso 3): comparar la frecuencia de temas de las últimas 48 horas con la ventana anterior.
+- **Más fuentes** (Telegram, Slack, exportación de WhatsApp) gracias a la capa de adaptadores.
+- **Ajuste de umbrales con datos.** El Resumen ya muestra la tasa de aprobación por tipo y rango de score; el paso
+  siguiente es proponer los umbrales de `src/config.py` a partir de ella.
+
 ---
 
 ## 📄 Licencia

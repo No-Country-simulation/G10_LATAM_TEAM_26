@@ -77,3 +77,9 @@ IMAGENES_MAX = int(os.getenv("IMAGENES_MAX", "0"))  # 0 = todas las piezas del p
 
 BUCKET_OCI = os.getenv("OCI_BUCKET_NAME", "communitylab-bucket")
 DIRECTORIO_SALIDAS = RAIZ / "salidas"
+
+# Seguridad del panel: una sesión sin actividad caduca a las SESION_HORAS, y tras LOGIN_INTENTOS_MAX contraseñas
+# erróneas seguidas (mismo usuario y misma dirección) el ingreso se bloquea LOGIN_BLOQUEO_S segundos.
+SESION_HORAS = float(os.getenv("SESION_HORAS", "12"))
+LOGIN_INTENTOS_MAX = int(os.getenv("LOGIN_INTENTOS_MAX", "5"))
+LOGIN_BLOQUEO_S = int(os.getenv("LOGIN_BLOQUEO_S", "300"))

@@ -33,6 +33,9 @@ def _cliente_oci():
         if archivo and Path(os.path.expanduser(archivo)).exists():
             ajustes = oci.config.from_file(os.path.expanduser(archivo), os.getenv("OCI_PROFILE", "DEFAULT"))
         else:
+            if archivo:
+                logger.warning(f"OCI_CONFIG_FILE apunta a «{archivo}», pero ese archivo no existe; "
+                               "se intenta con las variables OCI_* del .env")
             clave = os.getenv("OCI_KEY_FILE", "")
             if clave and not Path(clave).is_absolute():  # relativa a la raíz del proyecto (local y Docker)
                 clave = str(config.RAIZ / clave)
@@ -40,6 +43,15 @@ def _cliente_oci():
                        "fingerprint": os.getenv("OCI_FINGERPRINT", ""), "key_file": clave,
                        "region": os.getenv("OCI_REGION", "sa-santiago-1")}
             if not (ajustes["user"] and ajustes["key_file"] and Path(ajustes["key_file"]).exists()):
+                # Sin esto el panel solo decía «faltan las credenciales» aunque estuvieran todas menos la ruta
+                if ajustes["user"] and ajustes["key_file"]:
+                    logger.warning(f"OCI: no encuentro la llave privada en «{ajustes['key_file']}» "
+                                   "(OCI_KEY_FILE; las rutas relativas cuentan desde la raíz del proyecto, "
+                                   "y en Docker data/ se monta en /app/data); solo copia local")
+                elif ajustes["user"] or ajustes["key_file"]:
+                    faltan = [n for n, v in (("OCI_USER_OCID", ajustes["user"]), ("OCI_KEY_FILE", ajustes["key_file"]))
+                              if not v]
+                    logger.warning(f"OCI: configuración incompleta, falta {', '.join(faltan)}; solo copia local")
                 return None
         oci.config.validate_config(ajustes)
         return oci.object_storage.ObjectStorageClient(ajustes)

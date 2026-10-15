@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from fastapi import Depends, FastAPI, Header, HTTPException  # noqa: E402
+from fastapi import Cookie, Depends, FastAPI, Header, HTTPException, Request  # noqa: E402
 from fastapi.responses import FileResponse, Response  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 from pydantic import BaseModel  # noqa: E402
@@ -96,11 +96,36 @@ def sincronizar_discord(comunidad: Dict[str, Any], refrescar: bool = False) -> s
 
 # ─── Sesión ──────────────────────────────────────────────────────────────────
 
+# Las imágenes se piden con <img>, que no manda cabeceras. En vez de poner el token en la URL (queda en logs y en el
+# historial del navegador), el login deja una cookie HttpOnly que solo leen los endpoints de imágenes.
+COOKIE_SESION = "cl_sesion"
+_ULTIMO_USO: Dict[str, float] = {}  # token -> última vez que se usó la sesión (para caducarla por inactividad)
+
+
+def _sesion(token: str) -> Optional[Espacio]:
+    """La sesión del token si existe y no caducó por inactividad; cada uso renueva el plazo."""
+    e = SESIONES.get(token)
+    if e is None:
+        return None
+    ahora = time.time()
+    if ahora - _ULTIMO_USO.get(token, ahora) > config.SESION_HORAS * 3600:
+        SESIONES.pop(token, None)
+        _ULTIMO_USO.pop(token, None)
+        return None
+    _ULTIMO_USO[token] = ahora
+    return e
+
+
 def espacio(authorization: str = Header(default="")) -> Espacio:
-    token = authorization.removeprefix("Bearer ").strip()
-    if token not in SESIONES:
+    e = _sesion(authorization.removeprefix("Bearer ").strip())
+    if e is None:
         raise HTTPException(401, "Tu sesión terminó. Vuelve a ingresar.")
-    return SESIONES[token]
+    return e
+
+
+def _iguales(a: str, b: str) -> bool:
+    """Comparación en tiempo constante (no revela cuántos caracteres coinciden)."""
+    return secrets.compare_digest(a.encode("utf-8"), b.encode("utf-8"))
 
 
 def autenticar(usuario: str, clave: str):
@@ -109,9 +134,30 @@ def autenticar(usuario: str, clave: str):
     if registro:
         return registro.username, registro.role
     admin_user, admin_pass = os.getenv("ADMIN_USER", "admin"), os.getenv("ADMIN_PASSWORD", "")
-    if admin_pass and usuario == admin_user and clave == admin_pass:
+    if admin_pass and _iguales(usuario, admin_user) and _iguales(clave, admin_pass):
         return usuario, "ADMIN"
     return None
+
+
+# Intentos fallidos de ingreso por (dirección, usuario), en memoria: frena el adivinar contraseñas sin bloquear a
+# todo el mundo porque alguien falle con otro usuario. Tras un proxy inverso todos comparten la dirección del proxy.
+_FALLOS: Dict[str, list] = {}
+_bloqueo_login = threading.Lock()
+
+
+def _clave_intentos(request: Request, usuario: str) -> str:
+    return f"{request.client.host if request.client else '?'}|{usuario.lower()}"
+
+
+def _intentos_recientes(clave: str) -> list:
+    corte = time.time() - config.LOGIN_BLOQUEO_S
+    with _bloqueo_login:
+        recientes = [t for t in _FALLOS.get(clave, []) if t > corte]
+        if recientes:
+            _FALLOS[clave] = recientes
+        else:
+            _FALLOS.pop(clave, None)
+        return recientes
 
 
 class Credenciales(BaseModel):
@@ -120,18 +166,37 @@ class Credenciales(BaseModel):
 
 
 @app.post("/api/login")
-def login(datos: Credenciales):
-    resultado = autenticar(datos.usuario.strip(), datos.clave)
+def login(datos: Credenciales, request: Request, response: Response):
+    usuario = datos.usuario.strip()
+    clave_intentos = _clave_intentos(request, usuario)
+    if len(_intentos_recientes(clave_intentos)) >= config.LOGIN_INTENTOS_MAX:
+        raise HTTPException(429, f"Demasiados intentos. Espera {config.LOGIN_BLOQUEO_S // 60 or 1} min e inténtalo de nuevo.")
+    resultado = autenticar(usuario, datos.clave)
     if not resultado:
+        with _bloqueo_login:
+            _FALLOS.setdefault(clave_intentos, []).append(time.time())
+            if len(_FALLOS) > 1000:  # tope de memoria ante un barrido de usuarios inventados
+                _FALLOS.pop(next(iter(_FALLOS)))
         raise HTTPException(401, "Usuario o contraseña incorrectos.")
+    with _bloqueo_login:
+        _FALLOS.pop(clave_intentos, None)
     token = secrets.token_urlsafe(32)
     SESIONES[token] = Espacio(*resultado)
+    _ULTIMO_USO[token] = time.time()
+    # Secure cuando el panel va por HTTPS (directo o detrás de Caddy/nginx, que mandan X-Forwarded-Proto).
+    # Sin max_age: la caducidad la controla el servidor (_sesion, renovada con cada uso); un plazo fijo desde el
+    # login borraba la cookie a las SESION_HORAS aunque la sesión siguiera activa y las imágenes daban 401
+    https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto", "") == "https"
+    response.set_cookie(COOKIE_SESION, token, path="/api", httponly=True, samesite="strict", secure=https)
     return {"token": token, "usuario": resultado[0], "rol": resultado[1]}
 
 
 @app.post("/api/logout")
-def logout(authorization: str = Header(default="")):
-    SESIONES.pop(authorization.removeprefix("Bearer ").strip(), None)
+def logout(response: Response, authorization: str = Header(default="")):
+    token = authorization.removeprefix("Bearer ").strip()
+    SESIONES.pop(token, None)
+    _ULTIMO_USO.pop(token, None)
+    response.delete_cookie(COOKIE_SESION, path="/api")
     return {"ok": True}
 
 
@@ -328,6 +393,12 @@ def resumen(e: Espacio = Depends(espacio)):
         datos = repository.resumen_panel(config.UMBRALES_POR_TIPO)
     except Exception as error:
         return {"base": repository.nombre_motor(), "mensajes": 0, "error": type(error).__name__}
+    if not datos["mensajes"]:
+        # Base sin análisis guardados: se muestra el lote de ejemplo, avisando que lo es (el front lo rotula)
+        demo = repository.resumen_demo(config.UMBRALES_POR_TIPO)
+        if demo:
+            datos = {**demo, "aprobacion": datos["aprobacion"]}
+            datos["demo"] = True
     ultima = datos["ultima_actividad"]
     return {"base": repository.nombre_motor(), **datos, "ultima_actividad": ultima.isoformat() if ultima else None}
 
@@ -415,9 +486,9 @@ def otra_imagen(activo_id: str, datos: Optional[PedidoImagen] = None, e: Espacio
 
 
 @app.get("/api/activos/{activo_id}/imagen")
-def ver_imagen(activo_id: str, token: str = ""):
-    """El navegador pide la imagen con <img>, que no manda cabeceras: el token viaja en la URL."""
-    e = SESIONES.get(token)
+def ver_imagen(activo_id: str, sesion: str = Cookie(default="", alias=COOKIE_SESION)):
+    """El navegador pide la imagen con <img>, que no manda cabeceras: la sesión viaja en una cookie HttpOnly."""
+    e = _sesion(sesion)
     if not e:
         raise HTTPException(401, "Sesión no válida.")
     ruta = (_activo(e, activo_id).get("imagen") or {}).get("ruta")
@@ -488,9 +559,9 @@ def publicaciones(refrescar: bool = False, e: Espacio = Depends(espacio)):
 
 
 @app.get("/api/publicaciones/imagen")
-def imagen_guardada(ruta: str, token: str = ""):
-    """Imagen de una publicación guardada en el bucket (el <img> no manda cabeceras: el token va en la URL)."""
-    if token not in SESIONES:
+def imagen_guardada(ruta: str, sesion: str = Cookie(default="", alias=COOKIE_SESION)):
+    """Imagen de una publicación guardada en el bucket (el <img> no manda cabeceras: la sesión va en una cookie)."""
+    if _sesion(sesion) is None:
         raise HTTPException(401, "Sesión no válida.")
     if not pub.ruta_de_imagen_valida(ruta):
         raise HTTPException(400, "Ruta de imagen no válida.")

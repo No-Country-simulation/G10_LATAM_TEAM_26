@@ -34,7 +34,6 @@ export function usarToken(nuevo: string, expirar: () => void) {
   alExpirar = expirar;
 }
 
-export const tokenActual = () => token;
 
 async function pedir<T>(metodo: string, ruta: string, cuerpo?: unknown): Promise<T> {
   const r = await fetch(`/api${ruta}`, {

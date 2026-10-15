@@ -11,7 +11,6 @@ frontend/dist
 *.key
 data/*
 !data/fixtures/
-orquestacion
 salidas
 ingesta
 docs

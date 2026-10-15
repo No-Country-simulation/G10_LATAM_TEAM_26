@@ -75,4 +75,32 @@ Mientras falten `OCI_HOST` u `OCI_USER`, el job de despliegue se omite con un av
 - **Volver a una versión anterior.** Lo más simple es re-ejecutar en Actions el workflow de ese commit. A mano, en la VM: `cd ~/communitylab && IMAGEN=ghcr.io/no-country-simulation/g10_latam_team_26:<sha> bash actualizar.sh` (el workflow deja ahí una copia del script; necesita el login propio descrito arriba).
 - **Logs.** Usa `docker logs -f communitylab_web`.
 - **Sesiones.** Las sesiones del panel viven en memoria (`SESIONES` en `src/api/app.py`), así que cada despliegue cierra la sesión de quienes estén conectados.
-- **HTTPS.** Para usar un dominio, pon Caddy o nginx delante del puerto 8000, o usa un Load Balancer de OCI con certificado.
+- **HTTPS.** Ver la sección siguiente.
+
+## HTTPS (recomendado)
+
+Sin HTTPS, el usuario, la clave y la sesión viajan sin cifrar por el puerto 8000. El repositorio ya trae un proxy
+Caddy que consigue y renueva solo el certificado de Let's Encrypt (`deploy/Caddyfile` y el perfil `https` de
+`deploy/docker-compose.prod.yml`). Lo único que hace falta es un dominio.
+
+1. **Un dominio que apunte a la IP pública de la VM** (registro `A`). Si no tienes uno, sirve un nombre gratuito como
+   `panel-<IP con guiones>.sslip.io` (por ejemplo `panel-129-151-10-20.sslip.io` para la IP 129.151.10.20); ese
+   servicio comparte límites de Let's Encrypt con todos sus usuarios, así que para una demo larga es mejor un dominio propio.
+2. **Abrir los puertos 80 y 443** en la Security List de OCI (TCP, origen `0.0.0.0/0`) y en la VM:
+   ```bash
+   sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
+   sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
+   sudo netfilter-persistent save
+   ```
+3. **Agregar una línea al `.env` de la VM** (`~/communitylab/.env`):
+   ```
+   DOMINIO=panel.tudominio.org
+   ```
+4. **Desplegar** (un push a `main` o `cd ~/communitylab && IMAGEN=... bash actualizar.sh`). Con `DOMINIO` definido,
+   `actualizar.sh` levanta Caddy y deja el panel solo en `127.0.0.1:8000`, así que ya nadie llega por HTTP plano.
+   El workflow copia el `Caddyfile` a la VM junto con el compose.
+5. Entra a `https://panel.tudominio.org`. Cuando funcione, puedes cerrar el puerto 8000 en la Security List y activar
+   `Strict-Transport-Security` en el `Caddyfile` (hay una línea comentada).
+
+Sin `DOMINIO` todo sigue como antes (HTTP en el 8000). Detrás del proxy, el límite de intentos de ingreso
+cuenta por la dirección del proxy y no por la de cada visitante; es un límite global por usuario, aceptable para este panel.

@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { api, descargar, tokenActual } from "../api";
-import { ESTADOS, FORMATOS, SENTIMIENTOS, TIPOS } from "../etiquetas";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { api, descargar } from "../api";
+import { mismoContenido, useEdicionesPendientes, type Contenido } from "../borradores";
+import { ESTADOS, FORMATOS, SENTIMIENTOS, TIPOS, plural } from "../etiquetas";
 import { Portada, Vacio } from "../componentes/Marca";
 import type { Activo, Analisis, Formato, Paquete } from "../tipos";
 
@@ -34,6 +35,9 @@ const CAMPOS: Record<Formato, { clave: string; nombre: string; largo?: boolean; 
 const titulo = (a: Activo) =>
   a.contenido.titulo || a.contenido.titular || a.contenido.tema || a.activo_id;
 
+/** LinkedIn corta las publicaciones a 3 000 caracteres (el texto y los hashtags cuentan juntos). */
+const LIMITE_LINKEDIN = 3000;
+
 export function Curaduria({ analisis, alActualizar, alAnalizar, alPublicar }: Props) {
   const [paquete, setPaquete] = useState<Paquete | null>(null);
   const [elegido, setElegido] = useState<string | null>(null);
@@ -54,15 +58,172 @@ export function Curaduria({ analisis, alActualizar, alAnalizar, alPublicar }: Pr
 
   const activos = paquete?.activos ?? [];
   const visibles = activos.filter((a) => filtro === "todos" || a.estado_curaduria === filtro);
+  const { pendientes, editar } = useEdicionesPendientes(analisis?.paquete?.paquete_id);
+  const conCambios = activos.filter((a) => pendientes[a.activo_id] && !mismoContenido(pendientes[a.activo_id], a.contenido));
+  const [guardandoTodos, setGuardandoTodos] = useState(false);
+  const [errorLote, setErrorLote] = useState("");
+
+  // El navegador avisa antes de cerrar o recargar la pestaña con ediciones sin guardar
+  useEffect(() => {
+    if (!conCambios.length) return;
+    const avisar = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", avisar);
+    return () => window.removeEventListener("beforeunload", avisar);
+  }, [conCambios.length]);
   useEffect(() => {
     if (activos.length && !activos.some((a) => a.activo_id === elegido)) setElegido(activos[0].activo_id);
   }, [activos, elegido]);
   const activo = activos.find((a) => a.activo_id === elegido) ?? null;
 
+  const [deshacer, setDeshacer] = useState<{ activo: Activo; anterior: string } | null>(null);
+  const sinDeshacer = useRef(false); // el lote no ofrece «Deshacer» por cada borrador
+  const plazoDeshacer = useRef<number>();
+  useEffect(() => () => window.clearTimeout(plazoDeshacer.current), []);
+
   function reemplazar(nuevo: Activo) {
+    const antes = activos.find((a) => a.activo_id === nuevo.activo_id);
     setPaquete((p) => p && { ...p, activos: p.activos.map((a) => (a.activo_id === nuevo.activo_id ? nuevo : a)) });
     alActualizar();
+    // Aprobar o descartar (con el botón o con A/D) deja 8 segundos para arrepentirse
+    if (antes && !sinDeshacer.current && antes.estado_curaduria !== nuevo.estado_curaduria
+      && nuevo.estado_curaduria !== "borrador") {
+      setDeshacer({ activo: nuevo, anterior: antes.estado_curaduria });
+      window.clearTimeout(plazoDeshacer.current);
+      plazoDeshacer.current = window.setTimeout(() => setDeshacer(null), 8000);
+    }
   }
+
+  /** Devuelve el borrador al estado que tenía antes de la última decisión (el texto no se toca). */
+  async function deshacerDecision() {
+    if (!deshacer) return;
+    const { activo: a, anterior } = deshacer;
+    window.clearTimeout(plazoDeshacer.current);
+    setDeshacer(null);
+    sinDeshacer.current = true;
+    try {
+      reemplazar(await api.patch<Activo>(`/activos/${a.activo_id}`, { estado: anterior }));
+      setElegido(a.activo_id);
+      setAnuncio(`Se deshizo la decisión: «${titulo(a)}» volvió a ${ESTADOS[anterior as keyof typeof ESTADOS]?.toLowerCase() ?? anterior}.`);
+    } catch (err) {
+      setErrorLote(`No se pudo deshacer: ${(err as Error).message}`);
+    } finally {
+      sinDeshacer.current = false;
+    }
+  }
+
+  /** Guarda de una vez las ediciones pendientes de todos los borradores (sin cambiar su estado). */
+  async function guardarTodos() {
+    setGuardandoTodos(true);
+    setErrorLote("");
+    const fallidos: string[] = [];
+    for (const a of conCambios) {
+      try {
+        reemplazar(await api.patch<Activo>(`/activos/${a.activo_id}`, { contenido: pendientes[a.activo_id] }));
+        editar(a.activo_id, null);
+      } catch {
+        fallidos.push(String(titulo(a)));
+      }
+    }
+    if (fallidos.length) setErrorLote(`No se pudo guardar: ${fallidos.join("; ")}. Se conservan tus cambios; reintenta.`);
+    setGuardandoTodos(false);
+  }
+
+  // ── Revisión con el teclado y aprobación en lote ──────────────────────────
+  const orden = ORDEN_FORMATOS.flatMap((f) => visibles.filter((a) => a.formato === f)); // el orden en que se ve la lista
+  const [decidiendo, setDecidiendo] = useState(false);
+  const [anuncio, setAnuncio] = useState("");
+  const [verAtajos, setVerAtajos] = useState(false);
+  const [umbralLote, setUmbralLote] = useState(0.9);
+  const [confirmarLote, setConfirmarLote] = useState(false);
+  const [aprobandoLote, setAprobandoLote] = useState(false);
+  const paraLote = activos.filter((a) => a.estado_curaduria === "borrador" && a.origen.score >= umbralLote);
+  const lista = useRef<HTMLElement>(null);
+
+  /** Aprueba o descarta un borrador (con su edición pendiente, si la hay). Devuelve si salió bien. */
+  async function decidir(a: Activo, estado: "aprobado" | "descartado"): Promise<boolean> {
+    try {
+      const contenido = pendientes[a.activo_id];
+      reemplazar(await api.patch<Activo>(`/activos/${a.activo_id}`, { ...(contenido ? { contenido } : {}), estado }));
+      editar(a.activo_id, null);
+      return true;
+    } catch (err) {
+      setErrorLote(`No se pudo ${estado === "aprobado" ? "aprobar" : "descartar"} «${titulo(a)}»: ${(err as Error).message}`);
+      return false;
+    }
+  }
+
+  /** Decide el borrador abierto y pasa al siguiente que todavía esté por revisar. */
+  async function decidirYSeguir(estado: "aprobado" | "descartado") {
+    if (!activo || decidiendo) return;
+    setDecidiendo(true);
+    setErrorLote("");
+    const i = orden.findIndex((a) => a.activo_id === activo.activo_id);
+    const siguiente = (i < 0 ? orden : [...orden.slice(i + 1), ...orden.slice(0, i)])
+      .find((a) => a.estado_curaduria === "borrador");
+    if (await decidir(activo, estado)) {
+      setAnuncio(siguiente ? `Ahora: ${titulo(siguiente)}.` : "No quedan borradores por revisar.");
+      if (siguiente) setElegido(siguiente.activo_id);
+    }
+    setDecidiendo(false);
+  }
+
+  function moverse(paso: 1 | -1) {
+    if (!orden.length) return;
+    const i = orden.findIndex((a) => a.activo_id === elegido);
+    const destino = i < 0 ? orden[0] : orden[(i + paso + orden.length) % orden.length];
+    setElegido(destino.activo_id);
+    setAnuncio(`Borrador: ${titulo(destino)}.`);
+  }
+
+  async function aprobarLote() {
+    setAprobandoLote(true);
+    setErrorLote("");
+    setDeshacer(null);
+    sinDeshacer.current = true;
+    let listos = 0;
+    for (const a of paraLote) {
+      if (!(await decidir(a, "aprobado"))) break; // si falla uno (p. ej. sesión vencida) no se sigue
+      listos++;
+    }
+    setAnuncio(`Se ${listos === 1 ? "aprobó 1 borrador" : `aprobaron ${listos} borradores`}.`);
+    sinDeshacer.current = false;
+    setConfirmarLote(false);
+    setAprobandoLote(false);
+  }
+
+  // Teclas: J/K recorren, A aprueba, D descarta, E edita, ? muestra la ayuda. No actúan mientras se escribe en un campo
+  // ni con un diálogo abierto. El manejador se registra una vez y lee siempre el estado más reciente por la ref.
+  const teclas = useRef<(e: KeyboardEvent) => void>();
+  teclas.current = (e) => {
+    if (!hayPaquete || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+    const objetivo = e.target as HTMLElement | null;
+    if (objetivo?.closest("input, textarea, select, [contenteditable='true']") || document.querySelector("dialog[open]")) return;
+    switch (e.key.toLowerCase()) {
+      case "j": e.preventDefault(); moverse(1); break;
+      case "k": e.preventDefault(); moverse(-1); break;
+      case "a": e.preventDefault(); void decidirYSeguir("aprobado"); break;
+      case "d": e.preventDefault(); void decidirYSeguir("descartado"); break;
+      case "u": e.preventDefault(); void deshacerDecision(); break;
+      case "e": e.preventDefault(); document.querySelector<HTMLTextAreaElement>(".editor textarea.area")?.focus(); break;
+      case "?": e.preventDefault(); setVerAtajos((v) => !v); break;
+      case "escape": setVerAtajos(false); break;
+    }
+  };
+  useEffect(() => {
+    const alPulsar = (e: KeyboardEvent) => teclas.current?.(e);
+    window.addEventListener("keydown", alPulsar);
+    return () => window.removeEventListener("keydown", alPulsar);
+  }, []);
+
+  // Al recorrer con J/K el borrador elegido se mantiene a la vista dentro de la lista (sin mover la página)
+  useEffect(() => {
+    const caja = lista.current;
+    const el = caja?.querySelector<HTMLElement>('.borrador[aria-current="true"]');
+    if (!caja || !el) return;
+    if (el.offsetTop < caja.scrollTop) caja.scrollTop = Math.max(0, el.offsetTop - 40);
+    else if (el.offsetTop + el.offsetHeight > caja.scrollTop + caja.clientHeight)
+      caja.scrollTop = el.offsetTop + el.offsetHeight - caja.clientHeight + 8;
+  }, [elegido]);
 
   if (!hayPaquete) {
     return (
@@ -100,6 +261,19 @@ export function Curaduria({ analisis, alActualizar, alAnalizar, alPublicar }: Pr
         ]}
       />
 
+      {conCambios.length > 0 && (
+        <div className="nota aviso aviso-cambios" role="status">
+          <span>
+            Tienes {plural(conCambios.length, "borrador", "borradores")} con cambios sin guardar. «Guardar el paquete» solo
+            incluye lo que ya guardaste; si un borrador estaba aprobado, vuelve a «Por revisar».
+          </span>
+          <button className="boton chico" onClick={guardarTodos} disabled={guardandoTodos}>
+            {guardandoTodos && <span className="cargando" />} Guardar los cambios
+          </button>
+        </div>
+      )}
+      {errorLote && <p className="nota error" role="alert">{errorLote}</p>}
+
       <div className="seccion-cabeza">
         <div className="segmentos" role="group" aria-label="Filtrar borradores">
           {(["todos", "borrador", "aprobado", "descartado"] as const).map((f) => (
@@ -115,6 +289,9 @@ export function Curaduria({ analisis, alActualizar, alAnalizar, alPublicar }: Pr
               <span className="cargando" /> Redactando {analisis!.redaccion!.listos} de {analisis!.redaccion!.total}
             </span>
           )}
+          <button className="boton chico fantasma" aria-expanded={verAtajos} onClick={() => setVerAtajos(!verAtajos)}>
+            Atajos <kbd>?</kbd>
+          </button>
           <button className="boton" disabled={!conteo.aprobado}
             onClick={() => descargar("/paquete/media-kit", `${analisis!.paquete!.paquete_id}_media_kit.zip`)}>
             Descargar media kit ({conteo.aprobado})
@@ -122,13 +299,60 @@ export function Curaduria({ analisis, alActualizar, alAnalizar, alPublicar }: Pr
         </div>
       </div>
 
+      {verAtajos && (
+        <div className="nota atajos" role="region" aria-label="Atajos de teclado">
+          <ul>
+            <li><kbd>J</kbd> <kbd>K</kbd> siguiente y anterior</li>
+            <li><kbd>A</kbd> aprobar y pasar al siguiente por revisar</li>
+            <li><kbd>D</kbd> descartar y pasar al siguiente</li>
+            <li><kbd>U</kbd> deshacer la última decisión</li>
+            <li><kbd>E</kbd> editar el texto</li>
+            <li><kbd>?</kbd> mostrar u ocultar esta ayuda</li>
+          </ul>
+          <p className="tenue">Funcionan cuando no estás escribiendo en un campo.</p>
+        </div>
+      )}
+
+      {conteo.borrador > 0 && (
+        <div className="lote">
+          {confirmarLote ? (
+            <>
+              <span>¿Aprobar {plural(paraLote.length, "borrador", "borradores")} con score {umbralLote.toFixed(2)} o más?
+                Revísalos antes si no los leíste: lo aprobado entra al paquete.</span>
+              <button className="boton primario chico" onClick={aprobarLote} disabled={aprobandoLote || !paraLote.length}>
+                {aprobandoLote && <span className="cargando" />} Sí, aprobar
+              </button>
+              <button className="boton chico" onClick={() => setConfirmarLote(false)} disabled={aprobandoLote}>Cancelar</button>
+            </>
+          ) : (
+            <>
+              <label htmlFor="umbral-lote">Aprobar de una vez los por revisar con score de</label>
+              <select id="umbral-lote" className="entrada" value={umbralLote}
+                onChange={(e) => setUmbralLote(Number(e.target.value))}>
+                {[0.95, 0.9, 0.85, 0.8].map((u) => <option key={u} value={u}>{u.toFixed(2)} o más</option>)}
+              </select>
+              <button className="boton chico" disabled={!paraLote.length} onClick={() => setConfirmarLote(true)}>
+                Aprobar {paraLote.length}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+      <p className="sr-solo" role="status">{anuncio}</p>
+      {deshacer && (
+        <div className="aviso-deshacer" role="status">
+          <span>{deshacer.activo.estado_curaduria === "aprobado" ? "Aprobado" : "Descartado"}: <b>{titulo(deshacer.activo)}</b></span>
+          <button className="boton chico" onClick={deshacerDecision}>Deshacer <kbd>U</kbd></button>
+        </div>
+      )}
+
       {!activos.length ? (
         <Vacio titulo={redactando ? "Redactando los primeros borradores" : "Este lote no dejó borradores"}>
           {redactando ? "Aparecen aquí en unos segundos." : "Ningún mensaje superó el umbral de su tipo."}
         </Vacio>
       ) : (
         <div className="estudio">
-          <nav className="hoja borradores" aria-label="Borradores">
+          <nav className="hoja borradores" aria-label="Borradores" ref={lista}>
             {ORDEN_FORMATOS.map((formato) => {
               const grupo = visibles.filter((a) => a.formato === formato);
               if (!grupo.length) return null;
@@ -140,7 +364,11 @@ export function Curaduria({ analisis, alActualizar, alAnalizar, alPublicar }: Pr
                       onClick={() => setElegido(a.activo_id)}>
                       <span className={`punto estado-${a.estado_curaduria}`} aria-label={ESTADOS[a.estado_curaduria]} />
                       <span className="titulo">{titulo(a)}</span>
-                      <span className="sc">{a.origen.score.toFixed(2)}</span>
+                      <span className="sc">
+                        {conCambios.includes(a) && <span className="sin-guardar" title="Cambios sin guardar" role="img"
+                          aria-label="Cambios sin guardar" />}
+                        {a.origen.score.toFixed(2)}
+                      </span>
                       <span className="meta">{a.origen.autor || "Miembro"} en #{a.origen.channel || "sin canal"}</span>
                     </button>
                   ))}
@@ -149,37 +377,41 @@ export function Curaduria({ analisis, alActualizar, alAnalizar, alPublicar }: Pr
             })}
             {!visibles.length && <p className="vacio">Ningún borrador {ESTADOS[filtro as "borrador"]?.toLowerCase()}.</p>}
           </nav>
-          {activo && <Editor key={activo.activo_id} activo={activo} alGuardar={reemplazar} />}
+          {activo && (
+            <Editor key={activo.activo_id} activo={activo} alGuardar={reemplazar}
+              contenido={pendientes[activo.activo_id] ?? activo.contenido}
+              alEditar={(c) => editar(activo.activo_id, c && !mismoContenido(c, activo.contenido) ? c : null)} />
+          )}
         </div>
       )}
     </>
   );
 }
 
-function Editor({ activo, alGuardar }: { activo: Activo; alGuardar: (a: Activo) => void }) {
-  const [contenido, setContenido] = useState<Record<string, any>>(activo.contenido);
+interface PropsEditor {
+  activo: Activo;
+  /** Lo que muestran los campos: la edición pendiente si la hay, o el contenido guardado. */
+  contenido: Contenido;
+  /** Con null se descarta la edición pendiente (ya se guardó o se reemplazó por el texto del servidor). */
+  alEditar: (contenido: Contenido | null) => void;
+  alGuardar: (a: Activo) => void;
+}
+
+function Editor({ activo, contenido, alEditar, alGuardar }: PropsEditor) {
   const [indicaciones, setIndicaciones] = useState("");
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const original = useRef(activo.contenido);
-
-  // Si el servidor cambia el contenido (regeneración), el editor lo toma
-  useEffect(() => {
-    if (JSON.stringify(original.current) !== JSON.stringify(activo.contenido)) {
-      original.current = activo.contenido;
-      setContenido(activo.contenido);
-    }
-  }, [activo.contenido]);
-
-  const editado = useMemo(() => JSON.stringify(contenido) !== JSON.stringify(activo.contenido), [contenido, activo.contenido]);
+  // Las ediciones viven en Curaduria (ver borradores.ts): cambiar de borrador o de etapa ya no las pierde
+  const setContenido = alEditar;
+  const editado = !mismoContenido(contenido, activo.contenido);
 
   async function guardar(estado?: string) {
     setOcupado(estado ?? "guardar");
     setError("");
     try {
       const nuevo = await api.patch<Activo>(`/activos/${activo.activo_id}`, { contenido, ...(estado ? { estado } : {}) });
-      original.current = nuevo.contenido;
       alGuardar(nuevo);
+      alEditar(null); // lo guardado ya es el contenido del servidor: no queda nada pendiente
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -191,7 +423,9 @@ function Editor({ activo, alGuardar }: { activo: Activo; alGuardar: (a: Activo) 
     setOcupado("regenerar");
     setError("");
     try {
-      alGuardar(await api.post<Activo>(`/activos/${activo.activo_id}/regenerar`, { indicaciones }));
+      const nuevo = await api.post<Activo>(`/activos/${activo.activo_id}/regenerar`, { indicaciones });
+      alGuardar(nuevo);
+      alEditar(null); // el texto regenerado reemplaza a la edición pendiente
       setIndicaciones("");
     } catch (err) {
       setError((err as Error).message);
@@ -228,8 +462,13 @@ function Editor({ activo, alGuardar }: { activo: Activo; alGuardar: (a: Activo) 
               <div className="campo" key={c.clave}>
                 <label htmlFor={`campo-${c.clave}`}>{c.nombre}</label>
                 {c.largo ? (
-                  <textarea id={`campo-${c.clave}`} className="area" rows={activo.formato === "sugerencia_faq" ? 9 : 8}
-                    value={contenido[c.clave] ?? ""} onChange={(e) => setContenido({ ...contenido, [c.clave]: e.target.value })} />
+                  <>
+                    <textarea id={`campo-${c.clave}`} className="area" rows={activo.formato === "sugerencia_faq" ? 9 : 8}
+                      value={contenido[c.clave] ?? ""} onChange={(e) => setContenido({ ...contenido, [c.clave]: e.target.value })} />
+                    {activo.formato === "post_linkedin" && c.clave === "copy" && (
+                      <ContadorLinkedin texto={textoPublicable(activo.formato, contenido)} />
+                    )}
+                  </>
                 ) : (
                   <input id={`campo-${c.clave}`} className={`entrada ${c.lista ? "" : "serif"}`}
                     value={c.lista ? (contenido[c.clave] ?? []).join(" ") : contenido[c.clave] ?? ""}
@@ -268,6 +507,22 @@ function Editor({ activo, alGuardar }: { activo: Activo; alGuardar: (a: Activo) 
         {error && <p className="nota error" role="alert" style={{ margin: "0 22px 18px" }}>{error}</p>}
       </section>
     </div>
+  );
+}
+
+/** Cuántos caracteres lleva el post tal como se publicará (texto + hashtags) frente al límite de LinkedIn. */
+function ContadorLinkedin({ texto }: { texto: string }) {
+  const n = [...texto].length; // por caracteres, no por unidades UTF-16 (los emojis cuentan como uno)
+  const resto = LIMITE_LINKEDIN - n;
+  const nivel = resto < 0 ? "excedido" : resto <= LIMITE_LINKEDIN * 0.1 ? "cerca" : "";
+  const aviso = nivel === "excedido" ? `Te pasas por ${-resto} caracteres: LinkedIn lo cortará o no lo dejará publicar.`
+    : nivel === "cerca" ? `Quedan ${resto} caracteres.` : "";
+  return (
+    <p className={`contador ${nivel}`}>
+      <span className="num">{n.toLocaleString("es")} / {LIMITE_LINKEDIN.toLocaleString("es")} caracteres</span>
+      <span className="tenue"> · con hashtags</span>
+      {aviso && <span className="contador-aviso" role="status"> {aviso}</span>}
+    </p>
   );
 }
 
@@ -326,7 +581,8 @@ function Exportar({ activo, contenido }: { activo: Activo; contenido: Record<str
 }
 
 function urlImagen(activo: Activo) {
-  return `/api/activos/${activo.activo_id}/imagen?token=${encodeURIComponent(tokenActual())}&v=${encodeURIComponent(activo.imagen?.ruta ?? "")}`;
+  // La sesión viaja en una cookie HttpOnly; `v` solo fuerza a recargar cuando la imagen cambia
+  return `/api/activos/${activo.activo_id}/imagen?v=${encodeURIComponent(activo.imagen?.ruta ?? "")}`;
 }
 
 function VistaLinkedin({ contenido, activo }: { contenido: Record<string, any>; activo: Activo }) {

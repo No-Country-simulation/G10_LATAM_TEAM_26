@@ -17,7 +17,21 @@ if [ -n "${GHCR_USER:-}" ]; then
   docker login ghcr.io -u "$GHCR_USER" --password-stdin >/dev/null
 fi
 
-echo "IMAGEN=$IMAGEN" > .imagen.env
+# HTTPS: si el .env define DOMINIO se levanta Caddy (perfil "https") y el panel deja de publicarse en el 8000 abierto
+# al mundo: queda solo en 127.0.0.1. Sin DOMINIO todo sigue como antes (HTTP en el 8000).
+DOMINIO="$(grep -E '^DOMINIO=' .env | tail -n1 | cut -d= -f2- | tr -d '\r"' | tr -d "'" || true)"
+{
+  echo "IMAGEN=$IMAGEN"
+  if [ -n "$DOMINIO" ]; then
+    echo "DOMINIO=$DOMINIO"
+    echo "WEB_PUBLICAR=127.0.0.1:8000"
+  fi
+} > .imagen.env
+PERFIL=()
+if [ -n "$DOMINIO" ]; then
+  test -f Caddyfile || { echo "Falta $(pwd)/Caddyfile (lo copia el workflow desde deploy/Caddyfile)"; exit 1; }
+  PERFIL=(--profile https)
+fi
 
 # Un communitylab_web que no salió de este compose (por ejemplo, uno levantado a mano) ocupa el nombre y el
 # puerto 8000: se retira antes de levantar el nuevo
@@ -27,8 +41,8 @@ if [ "$proyecto" != "-" ] && [ "$proyecto" != "$(basename "$(pwd)")" ]; then
   docker rm -f communitylab_web >/dev/null
 fi
 
-docker compose --env-file .imagen.env pull
-docker compose --env-file .imagen.env up -d --remove-orphans
+docker compose --env-file .imagen.env "${PERFIL[@]}" pull
+docker compose --env-file .imagen.env "${PERFIL[@]}" up -d --remove-orphans
 
 for _ in $(seq 1 30); do
   if curl -fs -o /dev/null http://127.0.0.1:8000/api/openapi.json; then
@@ -40,5 +54,5 @@ for _ in $(seq 1 30); do
 done
 
 echo "La app no respondió tras el despliegue"
-docker compose --env-file .imagen.env logs --tail 80
+docker compose --env-file .imagen.env "${PERFIL[@]}" logs --tail 80
 exit 1

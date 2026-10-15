@@ -6,8 +6,10 @@ mensajes analizados y activos de marketing. Basado en la integración de Álvaro
 
 La wallet nunca va al repositorio: se copia a OCI_DB_WALLET_PATH (data/wallet/ está en .gitignore).
 """
+import json
 import os
 from collections import Counter
+from datetime import datetime
 from contextlib import contextmanager
 from functools import lru_cache
 from pathlib import Path
@@ -228,6 +230,39 @@ def resumen_historico() -> Dict[str, Any]:
     }
 
 
+# Rangos de score para mirar cómo aprueban los curadores (el umbral de cada tipo cae en el límite de un rango)
+RANGOS_SCORE = ((0.0, 0.7), (0.7, 0.8), (0.8, 0.9), (0.9, 1.01))
+
+
+def _conteo_estados(estados) -> Dict[str, int]:
+    """Aprobados (incluye publicados), descartados y pendientes (todavía en borrador) de una lista de estados."""
+    c = Counter(estados)
+    return {"aprobados": c["aprobado"] + c["publicado"], "descartados": c["descartado"],
+            "pendientes": sum(n for e, n in c.items() if e not in ("aprobado", "publicado", "descartado"))}
+
+
+def tasa_aprobacion() -> Dict[str, Any]:
+    """Qué hacen los curadores con los borradores: cuántos aprueban y cuántos descartan, por tipo de oportunidad y por
+    rango de score del mensaje de origen. Sirve para ver si los umbrales de config.UMBRALES_POR_TIPO están bien
+    puestos: un rango con casi todo descartado pide un umbral más alto; uno con casi todo aprobado, quizá más bajo.
+    La tasa se calcula sobre lo ya decidido (aprobados + descartados); los borradores pendientes se cuentan aparte."""
+    with sesion() as s:
+        filas = (s.query(MarketingAsset.status, CommunityMessage.opportunity_type, CommunityMessage.opportunity_score)
+                 .outerjoin(CommunityMessage, MarketingAsset.community_message_id == CommunityMessage.id).all())
+    por_tipo: Dict[str, list] = {}
+    por_rango: Dict[tuple, list] = {r: [] for r in RANGOS_SCORE}
+    for estado, tipo, score in filas:
+        por_tipo.setdefault(tipo or "NONE", []).append(estado)
+        if score is not None:
+            rango = next(r for r in RANGOS_SCORE if r[0] <= score < r[1])
+            por_rango[rango].append(estado)
+    return {
+        "total": _conteo_estados(e for e, *_ in filas),
+        "por_tipo": {t: _conteo_estados(e) for t, e in sorted(por_tipo.items())},
+        "por_rango": [{"desde": r[0], "hasta": min(r[1], 1.0), **_conteo_estados(e)} for r, e in por_rango.items()],
+    }
+
+
 def resumen_panel(umbrales: Dict[str, float], dias: int = 30) -> Dict[str, Any]:
     """Métricas de la pestaña Resumen con todo lo guardado: mensajes por día (últimos `dias` con actividad), tipos,
     sentimiento, canales, temas y el embudo mensaje -> oportunidad -> borrador -> aprobado."""
@@ -236,7 +271,27 @@ def resumen_panel(umbrales: Dict[str, float], dias: int = 30) -> Dict[str, Any]:
                            CommunityMessage.opportunity_score, CommunityMessage.sentiment, CommunityMessage.channel,
                            CommunityMessage.topics).all()
         activos = [a for (a,) in s.query(MarketingAsset.status).all()]
+    return {**_agregar_resumen(mensajes, activos, umbrales, dias), "aprobacion": tasa_aprobacion()}
 
+
+ARCHIVO_DEMO = "procesados_ejemplo_formato_p.json"
+CARPETA_FIXTURES = Path(__file__).resolve().parents[3] / "data" / "fixtures"
+
+
+def resumen_demo(umbrales: Dict[str, float], dias: int = 30) -> Optional[Dict[str, Any]]:
+    """El mismo resumen, calculado con el lote de ejemplo (data/fixtures), para mostrar algo cuando la base todavía
+    no tiene análisis guardados. Devuelve None si el archivo de ejemplo no está. Sin borradores ni aprobaciones."""
+    try:
+        procesados = json.loads((CARPETA_FIXTURES / ARCHIVO_DEMO).read_text(encoding="utf-8"))["procesados"]
+        mensajes = [(datetime.fromisoformat(p["tracking"]["timestamp"].replace("Z", "+00:00")),
+                     p["opportunity"]["type"], p["opportunity"]["opportunity_score"], p["analysis"]["sentiment"],
+                     p["tracking"]["channel"], ",".join(p["analysis"].get("topics", []))) for p in procesados]
+    except (OSError, ValueError, KeyError):
+        return None
+    return _agregar_resumen(mensajes, [], umbrales, dias)
+
+
+def _agregar_resumen(mensajes, activos, umbrales: Dict[str, float], dias: int) -> Dict[str, Any]:
     def oportunidad(tipo, score) -> bool:
         return tipo in umbrales and (score or 0) >= umbrales[tipo]
 

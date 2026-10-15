@@ -1,0 +1,16 @@
+# Proxy HTTPS delante del panel (perfil "https" de docker-compose.prod.yml).
+# Caddy pide y renueva solo el certificado de Let's Encrypt para el dominio de DOMINIO (en el .env de la VM).
+# Requisitos: el dominio apunta a la IP pública de la VM y los puertos 80 y 443 están abiertos (docs/despliegue-oci.md).
+{$DOMINIO} {
+	encode gzip
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy no-referrer
+		# Cuando el HTTPS ya funcione bien, descomenta para que los navegadores no vuelvan a usar HTTP:
+		# Strict-Transport-Security "max-age=31536000"
+	}
+
+	reverse_proxy web:8000
+}

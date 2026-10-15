@@ -97,6 +97,26 @@ def test_activos_se_registran_y_actualizan_su_estado(base, lote):
     assert historico["activos"]["aprobado"] == 1
 
 
+def test_tasa_de_aprobacion_por_tipo_y_rango_de_score(base, lote):
+    interacciones, detalle = lote
+    base.init_db()
+    assert base.tasa_aprobacion()["total"] == {"aprobados": 0, "descartados": 0, "pendientes": 0}  # base vacía
+    paquete = json.loads(json.dumps(detalle["paquete"]))
+    base.guardar_mensajes(detalle["procesados"], {m["message_id"]: m for m in interacciones}, "Comunidad_A")
+    estados = ["aprobado", "descartado", "publicado"]
+    for i, activo in enumerate(paquete["activos"]):
+        activo["estado_curaduria"] = estados[i] if i < len(estados) else "borrador"
+    base.guardar_activos(paquete, "Comunidad_A")
+
+    tasa = base.tasa_aprobacion()
+    n = len(paquete["activos"])
+    assert tasa["total"] == {"aprobados": 2, "descartados": 1, "pendientes": n - 3}  # publicado cuenta como aprobado
+    assert sum(sum(c.values()) for c in tasa["por_tipo"].values()) == n
+    assert sum(r["aprobados"] + r["descartados"] + r["pendientes"] for r in tasa["por_rango"]) == n
+    assert [(r["desde"], r["hasta"]) for r in tasa["por_rango"]] == [(0.0, 0.7), (0.7, 0.8), (0.8, 0.9), (0.9, 1.0)]
+    assert base.resumen_panel(config.UMBRALES_POR_TIPO)["aprobacion"] == tasa  # el Resumen la incluye
+
+
 class _ClienteFalso:
     def __init__(self, falla=False):
         self.subidos, self.falla = {}, falla

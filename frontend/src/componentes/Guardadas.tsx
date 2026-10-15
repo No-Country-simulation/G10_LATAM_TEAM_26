@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, tokenActual } from "../api";
+import { api } from "../api";
 import { FORMATOS, plural } from "../etiquetas";
 import { Vacio } from "./Marca";
 import type { Formato, Guardadas as DatosGuardadas, PublicacionGuardada } from "../tipos";
@@ -101,7 +101,7 @@ function Tarjeta({ p }: { p: PublicacionGuardada }) {
   return (
     <article className="guardada hoja">
       {p.imagen && (
-        <img src={`/api/publicaciones/imagen?ruta=${encodeURIComponent(p.imagen)}&token=${encodeURIComponent(tokenActual())}`}
+        <img src={`/api/publicaciones/imagen?ruta=${encodeURIComponent(p.imagen)}`}
           alt="" loading="lazy" />
       )}
       <div className="guardada-cuerpo">
