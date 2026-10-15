@@ -275,11 +275,16 @@ def elegir_fuente(datos: Fuente, e: Espacio = Depends(espacio)):
         except KeyError:
             raise HTTPException(404, "Esa comunidad de Discord ya no existe.")
         e.discord_comunidad = comunidad["id"]
-        error = sincronizar_discord(comunidad, datos.refrescar) if comunidades.publica(comunidad)["configurada"] else ""
+        configurada = comunidades.publica(comunidad)["configurada"]
+        error = sincronizar_discord(comunidad, datos.refrescar) if configurada else ""
         e.dataset = load_discord_raw_stream(str(comunidad["raw_dir"]), origen=comunidad["origen"])
-        if error:
+        if not configurada:
+            # Sin token no se lee nada: decir "no tiene mensajes" escondía que falta configurar Discord
+            aviso = ("Discord no está configurado en el servidor: falta DISCORD_BOT_TOKEN en el .env."
+                     + (" Se muestran los mensajes ya leídos antes." if e.dataset else ""))
+        elif error:
             aviso = f"No se pudo leer Discord: {error}. Se muestran los mensajes ya leídos de esta comunidad."
-        if e.dataset is None and not error:
+        elif e.dataset is None:
             aviso = "Esta comunidad todavía no tiene mensajes en sus canales."
     else:
         e.dataset = load_fixture_data()
