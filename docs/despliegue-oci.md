@@ -18,10 +18,10 @@ La VM no compila nada. Solo descarga la imagen que ya pasó las pruebas.
    - Shape: **VM.Standard.A1.Flex** (Ampere, Always Free, por ejemplo 1 OCPU y 6 GB) o **VM.Standard.E2.1.Micro**.
    - Sube o genera una llave SSH. Esa es la llave que usarás tú. Para GitHub conviene crear otra (ver el paso 3).
 2. Abre el puerto de la app:
-   - Ve a **Networking → VCN → Security List** y agrega una regla de ingreso TCP **8510** desde `0.0.0.0/0`. Si el servidor ya corría la versión anterior en Streamlit, ese puerto ya está abierto. Usa **80/443** si pones un proxy delante.
+   - Ve a **Networking → VCN → Security List** y agrega una regla de ingreso TCP **8000** desde `0.0.0.0/0`. En la VM actual (`159.112.137.35`) ese puerto ya está abierto. Usa **80/443** si pones un proxy delante.
    - Las imágenes de Ubuntu en OCI traen iptables cerrado. Ábrelo en la VM:
      ```bash
-     sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 8510 -j ACCEPT
+     sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 8000 -j ACCEPT
      sudo netfilter-persistent save
      ```
 3. Instala Docker en la VM:
@@ -77,4 +77,4 @@ Mientras falten `OCI_HOST` u `OCI_USER`, el job de despliegue se omite con un av
 - **Volver a una versión anterior.** En la VM ejecuta `cd ~/communitylab && IMAGEN=ghcr.io/no-country-simulation/g10_latam_team_26:<sha> bash -s < actualizar.sh`. Para eso tienes que haber copiado antes `deploy/actualizar.sh` a la VM. Otra opción es re-ejecutar en Actions el workflow de ese commit.
 - **Logs.** Usa `docker logs -f communitylab_web`.
 - **Sesiones.** Las sesiones del panel viven en memoria (`SESIONES` en `src/api/app.py`), así que cada despliegue cierra la sesión de quienes estén conectados.
-- **HTTPS.** Para usar un dominio, pon Caddy o nginx delante del puerto 8510, o usa un Load Balancer de OCI con certificado.
+- **HTTPS.** Para usar un dominio, pon Caddy o nginx delante del puerto 8000, o usa un Load Balancer de OCI con certificado.
