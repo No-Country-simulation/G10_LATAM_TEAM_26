@@ -69,7 +69,7 @@ No debe imprimir nada.
 
 ## Pendientes de seguridad conocidos (por prioridad)
 
-1. **Activar el HTTPS en producción** y cerrar el puerto 8510 en la Security List de OCI.
+1. **Activar el HTTPS en producción** y cerrar el puerto 8000 en la Security List de OCI.
 2. **Sesiones en memoria**: se pierden al reiniciar la API. Con varias réplicas habría que guardarlas en la base.
 3. **Anonimización**: `src/utils/sanitizer.py` solo enmascara correos, teléfonos y menciones de Discord. Los nombres
    dentro del texto libre llegan al LLM.
