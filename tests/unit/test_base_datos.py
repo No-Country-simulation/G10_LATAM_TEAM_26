@@ -83,6 +83,27 @@ def test_reconoce_las_claves_de_la_version_anterior(base):
     assert [m["message_id"] for m in nuevos] == ["MSG-0009", "MSG-0010"] and repetidos == 2
 
 
+def test_borra_los_mensajes_borrados_en_discord_y_conserva_sus_borradores(base):
+    """Claves actual (comunidad:DISC-6 dígitos) y anteriores (DISC-id completo); el borrador queda sin vínculo."""
+    base.init_db()
+    from src.adapters.db.models import CommunityMessage, MarketingAsset
+    with base.sesion() as s:
+        for mid in ("Discord_X:DISC-111111", "DISC-1552836674617352364", "Discord_X:DISC-999999"):
+            s.add(CommunityMessage(message_id=mid, channel="general", author_raw="x", author_anon="x",
+                                   raw_text="hola", clean_text="hola"))
+        s.flush()
+        origen = s.query(CommunityMessage).filter_by(message_id="Discord_X:DISC-111111").one()
+        s.add(MarketingAsset(post_id="p/1", community_message_id=origen.id, origin_message_id="DISC-111111",
+                             asset_type="linkedin", title="t", copy="c"))
+        s.commit()
+    assert base.borrar_mensajes_discord(["1400000000000111111", "1552836674617352364"], "Discord_X") == 2
+    with base.sesion() as s:
+        assert [m for (m,) in s.query(CommunityMessage.message_id)] == ["Discord_X:DISC-999999"]
+        activo = s.query(MarketingAsset).one()
+        assert activo.community_message_id is None and activo.origin_message_id == "DISC-111111"
+    assert base.borrar_mensajes_discord([], "Discord_X") == 0
+
+
 def test_activos_se_registran_y_actualizan_su_estado(base, lote):
     interacciones, detalle = lote
     base.init_db()

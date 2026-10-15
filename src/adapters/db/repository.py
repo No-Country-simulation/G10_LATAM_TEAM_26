@@ -150,6 +150,26 @@ def separar_nuevos(interacciones: List[Dict[str, Any]], comunidad: str) -> Tuple
     return nuevos, len(interacciones) - len(nuevos)
 
 
+def borrar_mensajes_discord(ids_discord: Iterable[str], comunidad: str) -> int:
+    """Borra de la base los mensajes de Discord que se borraron en el servidor (ids completos de Discord). Reconoce la
+    clave actual (comunidad:DISC-<últimos 6 dígitos>) y las de la versión anterior (DISC-<id> y DISC-<6 dígitos>).
+    Los borradores que salieron de esos mensajes se conservan, sin el vínculo al mensaje. Devuelve cuántos borró."""
+    claves = set()
+    for i in ids_discord:
+        claves |= {_clave(comunidad, f"DISC-{i[-6:]}"), f"DISC-{i}", f"DISC-{i[-6:]}"}
+    if not claves:
+        return 0
+    with sesion() as s:
+        ids = [f[0] for f in s.query(CommunityMessage.id).filter(CommunityMessage.message_id.in_(claves)).all()]
+        if not ids:
+            return 0
+        s.query(MarketingAsset).filter(MarketingAsset.community_message_id.in_(ids)).update(
+            {MarketingAsset.community_message_id: None}, synchronize_session=False)
+        borrados = s.query(CommunityMessage).filter(CommunityMessage.id.in_(ids)).delete(synchronize_session=False)
+        s.commit()
+    return borrados
+
+
 def guardar_mensajes(procesados: Iterable[Dict[str, Any]], textos: Dict[str, Dict[str, Any]], comunidad: str) -> int:
     """Registra los mensajes analizados (filas del Formato P) que todavía no estén en la base. Devuelve cuántos."""
     guardados = 0

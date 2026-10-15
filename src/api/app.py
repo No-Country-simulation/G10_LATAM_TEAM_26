@@ -88,6 +88,11 @@ def sincronizar_discord(comunidad: Dict[str, Any], refrescar: bool = False) -> s
                 resumen = DiscordAPI(comunidad["token"], servidor_id=comunidad.get("servidor_id")).sincronizar(
                     comunidad["carpeta"], almacen=oci if oci.conectado else None, prefijo=comunidad["prefijo"])
                 estado.update(nuevos=resumen["nuevos"], error="")
+                if resumen.get("borrados"):  # lo borrado en Discord sale también del análisis guardado
+                    try:
+                        repository.borrar_mensajes_discord(resumen["borrados"], comunidad["origen"])
+                    except Exception as error:
+                        logger.warning(f"No se pudieron borrar de la base los mensajes borrados en Discord: {error}")
             except Exception as error:
                 estado.update(nuevos=0, error=_explicar_error_discord(error))
             estado["momento"] = time.time()
