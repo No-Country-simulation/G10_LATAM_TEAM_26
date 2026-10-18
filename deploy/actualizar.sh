@@ -58,6 +58,9 @@ if ! docker run --rm --entrypoint sh -v "$(pwd)/data:/app/data" "$IMAGEN" \
   docker run --rm -u 0 --entrypoint sh -v "$(pwd)/data:/app/data" "$IMAGEN" \
     -c 'mkdir -p /app/data/fixtures && chown -R app:app /app/data'  # data/fixtures: punto de montaje de fixtures/
 fi
+# Imagen que corre ahora: si la nueva no levanta o no responde, se vuelve a esta
+PREVIA="$(docker inspect -f '{{.Config.Image}}' communitylab_web 2>/dev/null || true)"
+
 # Un communitylab_web que no salió de este compose (por ejemplo, uno levantado a mano) ocupa el nombre y el
 # puerto 8000: se retira recién ahora, justo antes de levantar el nuevo
 proyecto="-"
@@ -68,17 +71,32 @@ if [ "$proyecto" != "-" ] && [ "$proyecto" != "$(basename "$(pwd)")" ]; then
   echo "Retirando communitylab_web levantado fuera de este compose (proyecto: ${proyecto:-ninguno})"
   docker rm -f communitylab_web >/dev/null
 fi
-"${COMPOSE[@]}" --env-file .imagen.env "${PERFIL[@]}" up -d --remove-orphans
 
-for _ in $(seq 1 30); do
-  if curl -fs -o /dev/null http://127.0.0.1:8000/api/openapi.json; then
-    echo "Desplegado $IMAGEN"
-    docker image prune -f >/dev/null
-    exit 0
+levantar() {
+  # docker-compose v1 falla al recrear un contenedor con Docker reciente (KeyError: 'ContainerConfig') y lo deja
+  # renombrado como <id>_communitylab_web y detenido: con v1 se borra antes y se crea de cero
+  if [ "${COMPOSE[0]}" = docker-compose ]; then
+    docker ps -aq -f name='^communitylab_web$' -f name='_communitylab_web$' | xargs -r docker rm -f >/dev/null
   fi
-  sleep 2
-done
+  "${COMPOSE[@]}" --env-file .imagen.env "${PERFIL[@]}" up -d --remove-orphans || return 1
+  for _ in $(seq 1 30); do
+    curl -fs -o /dev/null http://127.0.0.1:8000/api/openapi.json && return 0
+    sleep 2
+  done
+  return 1
+}
 
-echo "La app no respondió tras el despliegue"
-"${COMPOSE[@]}" --env-file .imagen.env "${PERFIL[@]}" logs --tail 80
+if levantar; then
+  echo "Desplegado $IMAGEN"
+  docker image prune -f >/dev/null
+  exit 0
+fi
+
+echo "La app no levantó o no respondió con $IMAGEN"
+"${COMPOSE[@]}" --env-file .imagen.env "${PERFIL[@]}" logs --tail 80 || true
+if [ -n "$PREVIA" ] && [ "$PREVIA" != "$IMAGEN" ]; then
+  echo "Volviendo a la versión anterior: $PREVIA"
+  sed -i "s|^IMAGEN=.*|IMAGEN=$PREVIA|" .imagen.env
+  if levantar; then echo "La app sigue en pie con $PREVIA"; else echo "Tampoco levantó la versión anterior"; fi
+fi
 exit 1
