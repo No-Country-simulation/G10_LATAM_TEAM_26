@@ -37,7 +37,9 @@ mkdir -p ~/communitylab/data
 nano ~/communitylab/.env   # mismo formato que .env.example, con los valores reales
 ```
 
-Si usas OCI Object Storage o Autonomous Database, copia la llave `.pem` y la wallet a `~/communitylab/data/` y usa las mismas rutas relativas del `.env` (`data/oci_api_key.pem`, `data/wallet/...`). Esa carpeta se monta como volumen, así que la base SQLite, los paquetes y las capturas se conservan entre despliegues. Como el volumen tapa los datos de ejemplo de la imagen, el workflow copia `data/fixtures/` a la VM en cada despliegue.
+Si usas OCI Object Storage o Autonomous Database, copia la llave `.pem` y la wallet a `~/communitylab/data/` y usa las mismas rutas relativas del `.env` (`data/oci_api_key.pem`, `data/wallet/...`). Esa carpeta se monta como volumen, así que la base SQLite, los paquetes y las capturas se conservan entre despliegues. Como el volumen tapa los datos de ejemplo de la imagen, el workflow los copia en cada despliegue a `~/communitylab/fixtures/`, que se monta solo para lectura.
+
+**Permisos de `data/`.** La app escribe en `data/` (capturas de Discord, paquetes, base local) con el usuario de la imagen (uid 1000). Si la carpeta es de otro usuario, por ejemplo `ubuntu` (1001) o `root`, el panel muestra *"no tiene permiso de escritura en la carpeta data/"*. `actualizar.sh` lo corrige solo en cada despliegue. A mano: `sudo chown -R 1000:1000 ~/communitylab/data` y reiniciar el contenedor.
 
 La wallet va descomprimida en `~/communitylab/data/wallet/Wallet_communitylabdb/`. Las rutas absolutas dentro del contenedor también sirven: `OCI_DB_WALLET_PATH=/app/data/wallet/Wallet_communitylabdb` y `OCI_KEY_FILE=/app/data/oci_api_key.pem`. Si el `.env` viene de Windows, quítale los fines de línea CRLF con `sed -i 's/\r$//' .env`.
 

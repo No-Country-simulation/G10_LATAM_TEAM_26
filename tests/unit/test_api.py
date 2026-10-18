@@ -119,6 +119,12 @@ def test_discord_sin_token_lo_dice_en_vez_de_aparentar_canales_vacios(cliente, c
     cliente.post("/api/dataset/fuente", headers=cabeceras, json={"fuente": "estandar"})
 
 
+def test_sin_permiso_de_escritura_en_data_lo_explica(cliente):
+    from src.api.app import _explicar_error_discord
+    motivo = _explicar_error_discord(PermissionError(13, "Permission denied", "/app/data/raw/discord/cursores.tmp"))
+    assert "data/" in motivo and "permiso de escritura" in motivo and "inesperado" not in motivo
+
+
 def test_analizar_n_toma_los_siguientes_pendientes(monkeypatch):
     """Si los primeros mensajes del lote ya se analizaron, "analizar 5" toma los 5 siguientes que faltan."""
     from src.api import espacio as modulo
