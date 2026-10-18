@@ -88,6 +88,10 @@ levantar() {
 
 if levantar; then
   echo "Desplegado $IMAGEN"
+  # Cada versión pesa ~1 GB: del repositorio de la imagen se conservan solo la actual y la anterior (para volver atrás)
+  repo="${IMAGEN%:*}"
+  docker images "$repo" --format '{{.Repository}}:{{.Tag}}' | grep -vxF -e "$IMAGEN" -e "${PREVIA:-$IMAGEN}" \
+    | xargs -r docker rmi >/dev/null 2>&1 || true
   docker image prune -f >/dev/null
   exit 0
 fi
