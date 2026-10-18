@@ -8,6 +8,15 @@ set -euo pipefail
 : "${IMAGEN:?Falta IMAGEN}"
 test -f .env || { echo "Falta $(pwd)/.env en el servidor (ver docs/despliegue-oci.md)"; exit 1; }
 
+# Docker Compose v2 (plugin "docker compose") o v1 (docker-compose): la VM de OCI trae el v1 de Ubuntu
+if docker compose version >/dev/null 2>&1; then
+  COMPOSE=(docker compose)
+elif command -v docker-compose >/dev/null 2>&1; then
+  COMPOSE=(docker-compose)
+else
+  echo "Falta Docker Compose en el servidor (docker compose o docker-compose)"; exit 1
+fi
+
 # Desde el workflow llega GHCR_USER y el token temporal de GitHub Actions por stdin: el login se hace en una
 # configuración de Docker temporal que se borra al salir, así que en la VM no queda ninguna credencial
 if [ -n "${GHCR_USER:-}" ]; then
@@ -33,18 +42,11 @@ if [ -n "$DOMINIO" ]; then
   PERFIL=(--profile https)
 fi
 
-# Un communitylab_web que no salió de este compose (por ejemplo, uno levantado a mano) ocupa el nombre y el
-# puerto 8000: se retira antes de levantar el nuevo
-proyecto="-"
-if [ -n "$(docker ps -aq -f name='^communitylab_web$')" ]; then
-  proyecto=$(docker inspect -f '{{ index .Config.Labels "com.docker.compose.project" }}' communitylab_web)
+# Se baja la imagen antes de tocar nada: si falla, la app que está corriendo sigue en pie
+docker pull "$IMAGEN"
+if [ -n "$DOMINIO" ]; then
+  docker pull caddy:2
 fi
-if [ "$proyecto" != "-" ] && [ "$proyecto" != "$(basename "$(pwd)")" ]; then
-  echo "Retirando communitylab_web levantado fuera de este compose (proyecto: ${proyecto:-ninguno})"
-  docker rm -f communitylab_web >/dev/null
-fi
-
-docker compose --env-file .imagen.env "${PERFIL[@]}" pull
 
 # La app escribe en data/ (capturas de Discord, paquetes, base local) como el usuario de la imagen. Si la carpeta
 # es de otro usuario (la creó root o el usuario de la VM), falla con PermissionError: se le pasa a ese usuario
@@ -56,7 +58,17 @@ if ! docker run --rm --entrypoint sh -v "$(pwd)/data:/app/data" "$IMAGEN" \
   docker run --rm -u 0 --entrypoint sh -v "$(pwd)/data:/app/data" "$IMAGEN" \
     -c 'mkdir -p /app/data/fixtures && chown -R app:app /app/data'  # data/fixtures: punto de montaje de fixtures/
 fi
-docker compose --env-file .imagen.env "${PERFIL[@]}" up -d --remove-orphans
+# Un communitylab_web que no salió de este compose (por ejemplo, uno levantado a mano) ocupa el nombre y el
+# puerto 8000: se retira recién ahora, justo antes de levantar el nuevo
+proyecto="-"
+if [ -n "$(docker ps -aq -f name='^communitylab_web$')" ]; then
+  proyecto=$(docker inspect -f '{{ index .Config.Labels "com.docker.compose.project" }}' communitylab_web)
+fi
+if [ "$proyecto" != "-" ] && [ "$proyecto" != "$(basename "$(pwd)")" ]; then
+  echo "Retirando communitylab_web levantado fuera de este compose (proyecto: ${proyecto:-ninguno})"
+  docker rm -f communitylab_web >/dev/null
+fi
+"${COMPOSE[@]}" --env-file .imagen.env "${PERFIL[@]}" up -d --remove-orphans
 
 for _ in $(seq 1 30); do
   if curl -fs -o /dev/null http://127.0.0.1:8000/api/openapi.json; then
@@ -68,5 +80,5 @@ for _ in $(seq 1 30); do
 done
 
 echo "La app no respondió tras el despliegue"
-docker compose --env-file .imagen.env "${PERFIL[@]}" logs --tail 80
+"${COMPOSE[@]}" --env-file .imagen.env "${PERFIL[@]}" logs --tail 80
 exit 1
