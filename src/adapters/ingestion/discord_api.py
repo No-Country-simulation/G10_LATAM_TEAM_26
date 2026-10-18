@@ -201,9 +201,12 @@ class DiscordAPI:
         guardados = {(r.get("channel") or {}).get("id") for r in registros}
         borrados: set = set()
         for canal in (c for c in canales if c["id"] in guardados):
-            recientes = self._paginas(canal, LIMITE_POR_CANAL, None)
-            if not recientes:
+            # None = sin acceso (403/404 o límite de consultas): no se toca. [] = canal vacío: se borró todo lo que había
+            primera = self._get(f"/channels/{canal['id']}/messages", {"limit": min(100, LIMITE_POR_CANAL)})
+            if primera is None:
                 continue
+            recientes = self._paginas(canal, LIMITE_POR_CANAL, None) if len(primera) >= min(100, LIMITE_POR_CANAL) \
+                else primera
             vivos = {m["id"] for m in recientes}
             # Si el canal tiene menos mensajes que el tramo, el tramo es el canal entero
             desde = 0 if len(recientes) < LIMITE_POR_CANAL else min(int(i) for i in vivos)

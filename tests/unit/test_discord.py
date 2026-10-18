@@ -144,6 +144,17 @@ def test_actualizar_quita_lo_borrado_en_discord_y_no_lo_recupera_del_bucket(tmp_
     assert "lo voy a borrar" not in [m.texto for m in load_discord_raw_stream(str(tmp_path / "b")).interacciones]
 
 
+def test_si_se_borra_el_unico_mensaje_de_un_canal_tambien_se_quita(tmp_path, monkeypatch):
+    monkeypatch.delenv("SERVIDORES_OBSERVADOS", raising=False)
+    monkeypatch.delenv("CANALES_OBSERVADOS", raising=False)
+    sesion = _SesionFalsa()
+    api = DiscordAPI("token-falso", sesion)
+    api.sincronizar(tmp_path)
+    sesion.general = []  # el canal queda vacío: Discord responde [] (no 403)
+    assert api.sincronizar(tmp_path)["borrados"] == ["101"]
+    assert [m.texto for m in load_discord_raw_stream(str(tmp_path)).interacciones] == ["¿cómo comparto estado?"]
+
+
 def test_un_canal_que_no_se_puede_leer_no_pierde_lo_guardado(tmp_path, monkeypatch):
     monkeypatch.delenv("SERVIDORES_OBSERVADOS", raising=False)
     monkeypatch.delenv("CANALES_OBSERVADOS", raising=False)
