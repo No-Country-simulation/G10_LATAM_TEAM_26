@@ -124,13 +124,14 @@ jobs:
           fi
       - name: Copiar compose de producción y datos de ejemplo
         if: steps.secretos.outputs.listo == 'true'
-        # data/ del servidor se monta sobre /app/data y tapa los fixtures de la imagen: se copian al volumen
+        # data/ del servidor se monta sobre /app/data y tapa los fixtures de la imagen: van aparte, en fixtures/
+        # (del usuario de deploy, montada solo lectura), así no chocan con data/, que es del usuario de la app
         run: |
-          ssh -i ~/.ssh/id_oci "$OCI_USER@$OCI_HOST" "mkdir -p ~/$DIR_APP/data/fixtures"
+          ssh -i ~/.ssh/id_oci "$OCI_USER@$OCI_HOST" "mkdir -p ~/$DIR_APP/data ~/$DIR_APP/fixtures"
           scp -i ~/.ssh/id_oci deploy/docker-compose.prod.yml "$OCI_USER@$OCI_HOST:~/$DIR_APP/docker-compose.yml"
           scp -i ~/.ssh/id_oci deploy/actualizar.sh "$OCI_USER@$OCI_HOST:~/$DIR_APP/actualizar.sh"
           scp -i ~/.ssh/id_oci deploy/Caddyfile "$OCI_USER@$OCI_HOST:~/$DIR_APP/Caddyfile"
-          tar -C data/fixtures --exclude='lote_g26*' -cf - . | ssh -i ~/.ssh/id_oci "$OCI_USER@$OCI_HOST" "tar -C ~/$DIR_APP/data/fixtures -xf -"
+          tar -C data/fixtures --exclude='lote_g26*' -cf - . | ssh -i ~/.ssh/id_oci "$OCI_USER@$OCI_HOST" "tar -C ~/$DIR_APP/fixtures -xf -"
       - name: Actualizar contenedor
         if: steps.secretos.outputs.listo == 'true'
         # El paquete de GHCR es privado (la organización no permite publicarlo). El GITHUB_TOKEN de este job viaja por

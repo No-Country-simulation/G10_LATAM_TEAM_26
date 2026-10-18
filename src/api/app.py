@@ -74,6 +74,9 @@ def _explicar_error_discord(error: Exception) -> str:
         return "Discord limitó las consultas por un momento; intenta en un minuto"
     if isinstance(error, (requests.ConnectionError, requests.Timeout)):
         return "no hubo conexión con Discord"
+    if isinstance(error, PermissionError):  # lo leído se guarda en data/: la carpeta es de otro usuario del servidor
+        return ("el servidor no puede guardar lo leído porque no tiene permiso de escritura en la carpeta data/ "
+                "(revisa su dueño; ver docs/despliegue-oci.md)")
     return f"error inesperado ({type(error).__name__})"
 
 

@@ -13,6 +13,8 @@ services:
     volumes:
       # Wallet y llave .pem de OCI, capturas, paquetes, caché y base SQLite de contingencia
       - ./data:/app/data
+      # Datos de ejemplo que copia el workflow en cada deploy (solo lectura; data/ tapa los de la imagen)
+      - ./fixtures:/app/data/fixtures:ro
     restart: unless-stopped
 
   # HTTPS con certificado automático. Solo corre si el .env de la VM define DOMINIO (actualizar.sh activa el perfil).

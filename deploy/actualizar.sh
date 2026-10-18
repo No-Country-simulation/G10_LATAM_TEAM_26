@@ -35,13 +35,27 @@ fi
 
 # Un communitylab_web que no salió de este compose (por ejemplo, uno levantado a mano) ocupa el nombre y el
 # puerto 8000: se retira antes de levantar el nuevo
-proyecto=$(docker inspect -f '{{ index .Config.Labels "com.docker.compose.project" }}' communitylab_web 2>/dev/null || echo "-")
+proyecto="-"
+if [ -n "$(docker ps -aq -f name='^communitylab_web$')" ]; then
+  proyecto=$(docker inspect -f '{{ index .Config.Labels "com.docker.compose.project" }}' communitylab_web)
+fi
 if [ "$proyecto" != "-" ] && [ "$proyecto" != "$(basename "$(pwd)")" ]; then
   echo "Retirando communitylab_web levantado fuera de este compose (proyecto: ${proyecto:-ninguno})"
   docker rm -f communitylab_web >/dev/null
 fi
 
 docker compose --env-file .imagen.env "${PERFIL[@]}" pull
+
+# La app escribe en data/ (capturas de Discord, paquetes, base local) como el usuario de la imagen. Si la carpeta
+# es de otro usuario (la creó root o el usuario de la VM), falla con PermissionError: se le pasa a ese usuario
+# con un contenedor temporal de la misma imagen, sin necesitar sudo
+mkdir -p data fixtures
+if ! docker run --rm --entrypoint sh -v "$(pwd)/data:/app/data" "$IMAGEN" \
+     -c 'test -d /app/data/fixtures && test -w /app/data && test -z "$(find /app/data ! -writable -print -quit)"'; then
+  echo "Ajustando el dueño de $(pwd)/data al usuario de la app"
+  docker run --rm -u 0 --entrypoint sh -v "$(pwd)/data:/app/data" "$IMAGEN" \
+    -c 'mkdir -p /app/data/fixtures && chown -R app:app /app/data'  # data/fixtures: punto de montaje de fixtures/
+fi
 docker compose --env-file .imagen.env "${PERFIL[@]}" up -d --remove-orphans
 
 for _ in $(seq 1 30); do
