@@ -15,8 +15,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+COPY requirements.txt constraints.txt ./
+RUN pip install --upgrade pip && pip install -r requirements.txt -c constraints.txt
 
 COPY src/ src/
 COPY data/fixtures/ data/fixtures/
